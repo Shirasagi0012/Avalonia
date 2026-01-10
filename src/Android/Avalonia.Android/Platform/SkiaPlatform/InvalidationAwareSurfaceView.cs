@@ -55,12 +55,13 @@ namespace Avalonia.Android
             SurfaceWindowCreated?.Invoke(this, EventArgs.Empty);
         }
 
-        public void SurfaceDestroyed(ISurfaceHolder holder)
+        public virtual void SurfaceDestroyed(ISurfaceHolder holder)
         {
             Logger.TryGet(LogEventLevel.Verbose, LogArea.AndroidPlatform)?
                 .Log(this, "InvalidationAwareSurfaceView Destroyed");
             ReleaseNativeWindowHandle();
             _size = new PixelSize(1, 1);
+            _scaling = 1;
         }
 
         public virtual void SurfaceRedrawNeeded(ISurfaceHolder holder)

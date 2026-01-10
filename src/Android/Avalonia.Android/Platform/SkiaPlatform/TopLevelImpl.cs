@@ -189,9 +189,16 @@ namespace Avalonia.Android.Platform.SkiaPlatform
                 // ReSharper disable once CompareOfFloatsByEqualityOperator
                 if (newScaling != _oldScaling)
                 {
-                    _oldScaling =  newScaling;
+                    _oldScaling = newScaling;
                     _tl.ScalingChanged?.Invoke(newScaling);
                 }
+            }
+
+            public override void SurfaceDestroyed(ISurfaceHolder holder)
+            {
+                base.SurfaceDestroyed(holder);
+                _oldSize = Size.ToSize(Scaling);
+                _oldScaling = Scaling;
             }
 
             public override void SurfaceRedrawNeeded(ISurfaceHolder holder)
@@ -228,7 +235,7 @@ namespace Avalonia.Android.Platform.SkiaPlatform
 
         public void SetFrameThemeVariant(PlatformThemeVariant themeVariant)
         {
-            if(_insetsManager != null)
+            if (_insetsManager != null)
             {
                 _insetsManager.SystemBarTheme = themeVariant switch
                 {
@@ -337,7 +344,7 @@ namespace Avalonia.Android.Platform.SkiaPlatform
                 return _insetsManager;
             }
 
-            if(featureType == typeof(IClipboard))
+            if (featureType == typeof(IClipboard))
             {
                 return _clipboard;
             }
@@ -351,7 +358,7 @@ namespace Avalonia.Android.Platform.SkiaPlatform
             {
                 return _screens;
             }
-            
+
             return null;
         }
 
@@ -382,7 +389,7 @@ namespace Avalonia.Android.Platform.SkiaPlatform
 
         internal void TextInput(string text)
         {
-            if(Input != null)
+            if (Input != null)
             {
                 var args = new RawTextInputEventArgs(AndroidKeyboardDevice.Instance!, (ulong)DateTime.Now.Ticks, InputRoot!, text);
 
