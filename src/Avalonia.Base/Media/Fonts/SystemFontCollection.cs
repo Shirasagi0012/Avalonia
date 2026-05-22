@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
+using Avalonia.Media.TextFormatting;
 using Avalonia.Platform;
 
 namespace Avalonia.Media.Fonts
@@ -28,8 +29,13 @@ namespace Avalonia.Media.Fonts
         public override bool TryGetGlyphTypeface(string familyName, FontStyle style, FontWeight weight,
             FontStretch stretch, [NotNullWhen(true)] out GlyphTypeface? glyphTypeface)
         {
-            var typeface = new Typeface(familyName, style, weight, stretch).Normalize(out familyName);
-            var key = typeface.ToFontCollectionKey();
+            return TryGetGlyphTypeface(new Typeface(familyName, style, weight, stretch), out glyphTypeface);
+        }
+
+        public override bool TryGetGlyphTypeface(Typeface typeface, [NotNullWhen(true)] out GlyphTypeface? glyphTypeface)
+        {
+            var normalizedTypeface = typeface.Normalize(out var familyName);
+            var key = normalizedTypeface.ToFontCollectionKey();
 
             // Find an exact match first
             if (TryGetGlyphTypeface(familyName, key, allowNearestMatch: false, out glyphTypeface))
@@ -44,7 +50,12 @@ namespace Avalonia.Media.Fonts
             }
 
             //Try to create the glyph typeface via system font manager
-            if (!_platformImpl.TryCreateGlyphTypeface(familyName, style, weight, stretch, out var platformTypeface))
+            if (!_platformImpl.TryCreateGlyphTypeface(
+                    familyName,
+                    normalizedTypeface.Style,
+                    normalizedTypeface.Weight,
+                    normalizedTypeface.Stretch,
+                    out var platformTypeface))
             {
                 //Add null to cache to avoid future calls
                 TryAddGlyphTypeface(familyName, key, null);
@@ -87,6 +98,117 @@ namespace Avalonia.Media.Fonts
             return TryGetGlyphTypeface(familyName, key, allowNearestMatch: false, out glyphTypeface);
         }
 
+        internal override bool TryGetGlyphTypeface(
+            Typeface typeface,
+            EffectiveVariationCoordinates? variationCoordinates,
+            [NotNullWhen(true)] out GlyphTypeface? glyphTypeface)
+        {
+            var normalizedTypeface = typeface.Normalize(out var familyName);
+            var key = normalizedTypeface.ToFontCollectionKey(variationCoordinates);
+
+            // Find an exact match first
+            if (TryGetGlyphTypeface(familyName, key, allowNearestMatch: false, out glyphTypeface))
+            {
+                return true;
+            }
+
+            if (key.HasVariationCoordinates && _platformImpl is IFontManagerImplWithVariations variationPlatformImpl)
+            {
+                if (!variationPlatformImpl.TryCreateGlyphTypeface(
+                        familyName,
+                        normalizedTypeface.Style,
+                        normalizedTypeface.Weight,
+                        normalizedTypeface.Stretch,
+                        key.VariationCoordinates!,
+                        out var variationPlatformTypeface))
+                {
+                    TryAddGlyphTypeface(familyName, key, null);
+
+                    return false;
+                }
+
+                glyphTypeface = GlyphTypeface.TryCreate(variationPlatformTypeface);
+                if (glyphTypeface is null)
+                {
+                    return false;
+                }
+
+                TryAddGlyphTypeface(variationPlatformTypeface.FamilyName, key, glyphTypeface);
+
+                if (!TryAddGlyphTypeface(glyphTypeface, key))
+                {
+                    if (_glyphTypefaceCache.TryGetValue(familyName, out var existingVariationMap) &&
+                        existingVariationMap.TryGetValue(key, out var existingVariationTypeface) &&
+                        existingVariationTypeface != null)
+                    {
+                        glyphTypeface = existingVariationTypeface;
+
+                        return true;
+                    }
+
+                    return false;
+                }
+
+                return TryGetGlyphTypeface(familyName, key, allowNearestMatch: false, out glyphTypeface);
+            }
+
+            if (_glyphTypefaceCache.TryGetValue(familyName, out var glyphTypefaces) &&
+                glyphTypefaces.TryGetValue(key.WithoutVariationCoordinates(), out glyphTypeface))
+            {
+                if (glyphTypeface != null && key.HasVariationCoordinates)
+                {
+                    TryAddGlyphTypeface(familyName, key, glyphTypeface);
+                }
+
+                return glyphTypeface != null;
+            }
+
+            if (!_platformImpl.TryCreateGlyphTypeface(familyName, normalizedTypeface.Style, normalizedTypeface.Weight,
+                    normalizedTypeface.Stretch, out var platformTypeface))
+            {
+                TryAddGlyphTypeface(familyName, key, null);
+
+                return false;
+            }
+
+            var platformKey = platformTypeface.ToFontCollectionKey();
+
+            if (key.WithoutVariationCoordinates() != platformKey &&
+                TryGetGlyphTypeface(familyName, key, allowNearestMatch: true, out glyphTypeface))
+            {
+                return true;
+            }
+
+            glyphTypeface = GlyphTypeface.TryCreate(platformTypeface);
+            if (glyphTypeface is null)
+            {
+                return false;
+            }
+
+            TryAddGlyphTypeface(platformTypeface.FamilyName, key, glyphTypeface);
+
+            if (!TryAddGlyphTypeface(glyphTypeface, platformKey))
+            {
+                if (_glyphTypefaceCache.TryGetValue(familyName, out var existingMap) &&
+                    existingMap.TryGetValue(key.WithoutVariationCoordinates(), out var existingTypeface) &&
+                    existingTypeface != null)
+                {
+                    glyphTypeface = existingTypeface;
+
+                    if (key.HasVariationCoordinates)
+                    {
+                        TryAddGlyphTypeface(familyName, key, glyphTypeface);
+                    }
+
+                    return true;
+                }
+
+                return false;
+            }
+
+            return TryGetGlyphTypeface(familyName, key, allowNearestMatch: false, out glyphTypeface);
+        }
+
         public override bool TryGetFamilyTypefaces(string familyName, [NotNullWhen(true)] out IReadOnlyList<Typeface>? familyTypefaces)
         {
             return _platformImpl.TryGetFamilyTypefaces(familyName, out familyTypefaces);
@@ -95,9 +217,21 @@ namespace Avalonia.Media.Fonts
         public override bool TryMatchCharacter(int codepoint, FontStyle style, FontWeight weight, FontStretch stretch, string? familyName,
            CultureInfo? culture, out Typeface match)
         {
-            var requestedKey = new FontCollectionKey { Style = style, Weight = weight, Stretch = stretch };
+            var typeface = new Typeface(
+                familyName is null ? FontFamily.Default : new FontFamily(familyName),
+                style,
+                weight,
+                stretch);
 
-            if (base.TryMatchCharacter(codepoint, style, weight, stretch, familyName, culture, out match))
+            return TryMatchCharacter(codepoint, typeface, culture, out match);
+        }
+
+        public override bool TryMatchCharacter(int codepoint, Typeface typeface, CultureInfo? culture, out Typeface match)
+        {
+            var requestedTypeface = typeface.Normalize(out var familyName);
+            var requestedKey = requestedTypeface.ToFontCollectionKey();
+
+            if (base.TryMatchCharacter(codepoint, requestedTypeface, culture, out match))
             {
                 var matchKey = match.ToFontCollectionKey();
 
@@ -107,11 +241,19 @@ namespace Avalonia.Media.Fonts
                 }
             }
 
-            if (_platformImpl.TryMatchCharacter(codepoint, style, weight, stretch, familyName, culture, out var platformTypeface))
+            if (_platformImpl.TryMatchCharacter(
+                    codepoint,
+                    requestedTypeface.Style,
+                    requestedTypeface.Weight,
+                    requestedTypeface.Stretch,
+                    familyName,
+                    culture,
+                    out var platformTypeface))
             {
                 // Construct the resulting Typeface
                 match = new Typeface(platformTypeface.FamilyName, platformTypeface.Style, platformTypeface.Weight,
-                       platformTypeface.Stretch);
+                       platformTypeface.Stretch, requestedTypeface.Variations, requestedTypeface.OpticalSizing,
+                       requestedTypeface.NamedInstance);
 
                 // Compute the key for cache lookup this can be different from the requested key
                 var key = match.ToFontCollectionKey();

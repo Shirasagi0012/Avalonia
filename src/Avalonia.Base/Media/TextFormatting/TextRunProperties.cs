@@ -50,6 +50,21 @@ namespace Avalonia.Media.TextFormatting
         public virtual FontFeatureCollection? FontFeatures => null;
 
         /// <summary>
+        /// Optional variations of used font.
+        /// </summary>
+        public virtual FontVariationCollection? FontVariations => null;
+
+        /// <summary>
+        /// Selected variable font named instance.
+        /// </summary>
+        public virtual FontVariationNamedInstance? FontVariationNamedInstance => Typeface.NamedInstance;
+
+        /// <summary>
+        /// Controls automatic optical sizing for variable fonts.
+        /// </summary>
+        public virtual FontOpticalSizing FontOpticalSizing => FontOpticalSizing.Auto;
+
+        /// <summary>
         /// Run vertical box alignment
         /// </summary>
         public virtual BaselineAlignment BaselineAlignment => BaselineAlignment.Baseline;
@@ -70,7 +85,10 @@ namespace Avalonia.Media.TextFormatting
                    Equals(ForegroundBrush, other.ForegroundBrush) &&
                    Equals(BackgroundBrush, other.BackgroundBrush) &&
                    Equals(CultureInfo, other.CultureInfo) &&
-                   Equals(FontFeatures, other.FontFeatures);
+                   Equals(FontFeatures, other.FontFeatures) &&
+                   Equals(FontVariations, other.FontVariations) &&
+                   Equals(FontVariationNamedInstance, other.FontVariationNamedInstance) &&
+                   FontOpticalSizing == other.FontOpticalSizing;
         }
 
         public override bool Equals(object? obj)
@@ -88,6 +106,10 @@ namespace Avalonia.Media.TextFormatting
                 hashCode = (hashCode * 397) ^ (ForegroundBrush != null ? ForegroundBrush.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ (BackgroundBrush != null ? BackgroundBrush.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ (CultureInfo != null ? CultureInfo.GetHashCode() : 0);
+                hashCode = (hashCode * 397) ^ (FontFeatures != null ? FontFeatures.GetHashCode() : 0);
+                hashCode = (hashCode * 397) ^ (FontVariations != null ? FontVariations.GetHashCode() : 0);
+                hashCode = (hashCode * 397) ^ (FontVariationNamedInstance != null ? FontVariationNamedInstance.GetHashCode() : 0);
+                hashCode = (hashCode * 397) ^ FontOpticalSizing.GetHashCode();
                 return hashCode;
             }
         }
@@ -115,7 +137,10 @@ namespace Avalonia.Media.TextFormatting
                 BackgroundBrush,
                 BaselineAlignment,
                 CultureInfo,
-                FontFeatures);
+                FontFeatures,
+                FontVariations,
+                FontVariationNamedInstance,
+                FontOpticalSizing);
         }
     }
 }

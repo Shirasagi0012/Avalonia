@@ -30,6 +30,31 @@ namespace Avalonia.Controls.Documents
             AvaloniaProperty.RegisterAttached<TextElement, TextElement, FontFeatureCollection?>(
                 nameof(FontFeatures),
                 inherits: true);
+
+        /// <summary>
+        /// Defines the <see cref="FontVariations"/> property.
+        /// </summary>
+        public static readonly AttachedProperty<FontVariationCollection?> FontVariationsProperty =
+            AvaloniaProperty.RegisterAttached<TextElement, TextElement, FontVariationCollection?>(
+                nameof(FontVariations),
+                inherits: true);
+
+        /// <summary>
+        /// Defines the <see cref="FontVariationNamedInstance"/> property.
+        /// </summary>
+        public static readonly AttachedProperty<FontVariationNamedInstance?> FontVariationNamedInstanceProperty =
+            AvaloniaProperty.RegisterAttached<TextElement, TextElement, FontVariationNamedInstance?>(
+                nameof(FontVariationNamedInstance),
+                inherits: true);
+
+        /// <summary>
+        /// Defines the <see cref="FontOpticalSizing"/> property.
+        /// </summary>
+        public static readonly AttachedProperty<FontOpticalSizing> FontOpticalSizingProperty =
+            AvaloniaProperty.RegisterAttached<TextElement, TextElement, FontOpticalSizing>(
+                nameof(FontOpticalSizing),
+                defaultValue: FontOpticalSizing.Auto,
+                inherits: true);
         
         /// <summary>
         /// Defines the <see cref="FontSize"/> property.
@@ -118,6 +143,50 @@ namespace Avalonia.Controls.Documents
         {
             get => GetValue(FontFeaturesProperty);
             set => SetValue(FontFeaturesProperty, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the variable font axis coordinates inherited by text content.
+        /// </summary>
+        /// <remarks>
+        /// Values use CSS <c>font-variation-settings</c> item syntax through <see cref="FontVariationCollection"/>.
+        /// Explicit entries override matching coordinates from a named instance, font weight, stretch, italic style,
+        /// and automatic optical sizing. Unsupported axes are ignored by font faces that do not expose matching tags.
+        /// Changes invalidate text shaping, so animated variation values produce newly shaped glyph runs.
+        /// </remarks>
+        public FontVariationCollection? FontVariations
+        {
+            get => GetValue(FontVariationsProperty);
+            set => SetValue(FontVariationsProperty, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the selected variable font named instance inherited by text content.
+        /// </summary>
+        /// <remarks>
+        /// The named instance is matched against the selected font face by instance index and PostScript name.
+        /// When it resolves, its coordinates are used as the base variation values and can still be overridden by
+        /// inherited font properties, automatic optical sizing, and explicit <see cref="FontVariations"/> entries.
+        /// </remarks>
+        public FontVariationNamedInstance? FontVariationNamedInstance
+        {
+            get => GetValue(FontVariationNamedInstanceProperty);
+            set => SetValue(FontVariationNamedInstanceProperty, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the inherited optical sizing behavior for variable fonts.
+        /// </summary>
+        /// <remarks>
+        /// <see cref="Media.FontOpticalSizing.Auto"/> supplies the current font size as the <c>opsz</c> coordinate
+        /// only when the font face supports that axis and <see cref="FontVariations"/> does not contain an explicit
+        /// <c>"opsz"</c> entry. <see cref="Media.FontOpticalSizing.None"/> disables only the automatic coordinate;
+        /// explicit <c>"opsz"</c> entries are still applied.
+        /// </remarks>
+        public FontOpticalSizing FontOpticalSizing
+        {
+            get => GetValue(FontOpticalSizingProperty);
+            set => SetValue(FontOpticalSizingProperty, value);
         }
 
         /// <summary>
@@ -212,6 +281,66 @@ namespace Avalonia.Controls.Documents
         public static void SetFontFeatures(Control control, FontFeatureCollection? value)
         {
             control.SetValue(FontFeaturesProperty, value);
+        }
+
+        /// <summary>
+        /// Gets the value of the attached <see cref="FontVariationsProperty"/> on a control.
+        /// </summary>
+        /// <param name="control">The control.</param>
+        /// <returns>The font variations.</returns>
+        public static FontVariationCollection? GetFontVariations(Control control)
+        {
+            return control.GetValue(FontVariationsProperty);
+        }
+
+        /// <summary>
+        /// Sets the value of the attached <see cref="FontVariationsProperty"/> on a control.
+        /// </summary>
+        /// <param name="control">The control.</param>
+        /// <param name="value">The property value to set.</param>
+        public static void SetFontVariations(Control control, FontVariationCollection? value)
+        {
+            control.SetValue(FontVariationsProperty, value);
+        }
+
+        /// <summary>
+        /// Gets the value of the attached <see cref="FontVariationNamedInstanceProperty"/> on a control.
+        /// </summary>
+        /// <param name="control">The control.</param>
+        /// <returns>The selected font variation named instance.</returns>
+        public static FontVariationNamedInstance? GetFontVariationNamedInstance(Control control)
+        {
+            return control.GetValue(FontVariationNamedInstanceProperty);
+        }
+
+        /// <summary>
+        /// Sets the value of the attached <see cref="FontVariationNamedInstanceProperty"/> on a control.
+        /// </summary>
+        /// <param name="control">The control.</param>
+        /// <param name="value">The property value to set.</param>
+        public static void SetFontVariationNamedInstance(Control control, FontVariationNamedInstance? value)
+        {
+            control.SetValue(FontVariationNamedInstanceProperty, value);
+        }
+
+        /// <summary>
+        /// Gets the value of the attached <see cref="FontOpticalSizingProperty"/> on a control.
+        /// </summary>
+        /// <param name="control">The control.</param>
+        /// <returns>The font optical sizing behavior.</returns>
+        public static FontOpticalSizing GetFontOpticalSizing(Control control)
+        {
+            return control.GetValue(FontOpticalSizingProperty);
+        }
+
+        /// <summary>
+        /// Sets the value of the attached <see cref="FontOpticalSizingProperty"/> on a control.
+        /// </summary>
+        /// <param name="control">The control.</param>
+        /// <param name="value">The property value to set.</param>
+        public static void SetFontOpticalSizing(Control control, FontOpticalSizing value)
+        {
+            control.SetValue(FontOpticalSizingProperty, value);
         }
         
         /// <summary>
@@ -362,6 +491,10 @@ namespace Avalonia.Controls.Documents
                 case nameof(FontStyle):
                 case nameof(FontWeight):
                 case nameof(FontStretch):
+                case nameof(FontFeatures):
+                case nameof(FontVariations):
+                case nameof(FontVariationNamedInstance):
+                case nameof(FontOpticalSizing):
                 case nameof(Foreground):
                     InlineHost?.Invalidate();
                     break;

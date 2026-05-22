@@ -388,13 +388,17 @@ namespace Avalonia.Media.TextFormatting
                                 }
 
                                 var shaperOptions = new TextShaperOptions(
+                                    properties.Typeface,
                                     properties.CachedGlyphTypeface,
                                     properties.FontRenderingEmSize,
                                     shapeableRun.BidiLevel,
                                     properties.CultureInfo,
                                     paragraphProperties.DefaultIncrementalTab,
                                     paragraphProperties.LetterSpacing,
-                                    properties.FontFeatures);
+                                    properties.FontFeatures,
+                                    properties.FontVariations,
+                                    properties.FontVariationNamedInstance,
+                                    properties.FontOpticalSizing);
 
                                 ShapeTogether(groupedRuns, text, shaperOptions, textShaper, shapedRuns);
 
@@ -483,8 +487,12 @@ namespace Avalonia.Media.TextFormatting
 
         private static bool CanShapeTogether(TextRunProperties x, TextRunProperties y)
             => MathUtilities.AreClose(x.FontRenderingEmSize, y.FontRenderingEmSize)
-               && x.Typeface == y.Typeface
-               && x.BaselineAlignment == y.BaselineAlignment;
+                && x.Typeface == y.Typeface
+                && x.BaselineAlignment == y.BaselineAlignment
+                && Equals(x.FontFeatures, y.FontFeatures)
+                && Equals(x.FontVariations, y.FontVariations)
+                && Equals(x.FontVariationNamedInstance, y.FontVariationNamedInstance)
+                && x.FontOpticalSizing == y.FontOpticalSizing;
 
         private static void ShapeTogether(IReadOnlyList<UnshapedTextRun> textRuns, ReadOnlyMemory<char> text,
             TextShaperOptions options, TextShaper textShaper, RentedList<TextRun> results)

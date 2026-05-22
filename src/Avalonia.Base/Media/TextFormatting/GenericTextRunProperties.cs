@@ -17,9 +17,15 @@ namespace Avalonia.Media.TextFormatting
             IBrush? backgroundBrush = null,
             BaselineAlignment baselineAlignment = BaselineAlignment.Baseline,
             CultureInfo? cultureInfo = null,
-            FontFeatureCollection? fontFeatures = null)
+            FontFeatureCollection? fontFeatures = null,
+            FontVariationCollection? fontVariations = null,
+            FontVariationNamedInstance? fontVariationNamedInstance = null,
+            FontOpticalSizing fontOpticalSizing = FontOpticalSizing.Auto)
         {
-            Typeface = typeface;
+            Typeface = fontVariationNamedInstance.HasValue && !typeface.NamedInstance.HasValue
+                ? new Typeface(typeface.FontFamily, typeface.Style, typeface.Weight, typeface.Stretch,
+                    fontVariations ?? typeface.Variations, fontOpticalSizing, fontVariationNamedInstance)
+                : typeface;
             FontRenderingEmSize = fontRenderingEmSize;
             TextDecorations = textDecorations;
             ForegroundBrush = foregroundBrush;
@@ -27,6 +33,9 @@ namespace Avalonia.Media.TextFormatting
             BaselineAlignment = baselineAlignment;
             CultureInfo = cultureInfo;
             FontFeatures = fontFeatures;
+            FontVariations = fontVariations;
+            FontVariationNamedInstance = fontVariationNamedInstance ?? Typeface.NamedInstance;
+            FontOpticalSizing = fontOpticalSizing;
         }
 
         /// <inheritdoc />
@@ -46,6 +55,15 @@ namespace Avalonia.Media.TextFormatting
 
         /// <inheritdoc />
         public override FontFeatureCollection? FontFeatures { get; }
+
+        /// <inheritdoc />
+        public override FontVariationCollection? FontVariations { get; }
+
+        /// <inheritdoc />
+        public override FontVariationNamedInstance? FontVariationNamedInstance { get; }
+
+        /// <inheritdoc />
+        public override FontOpticalSizing FontOpticalSizing { get; }
 
         /// <inheritdoc />
         public override BaselineAlignment BaselineAlignment { get; }

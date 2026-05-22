@@ -38,6 +38,8 @@ namespace Avalonia.Media
         private readonly bool _hasVerticalMetrics;
 
         private IReadOnlyList<OpenTypeTag>? _supportedFeatures;
+        private IReadOnlyList<FontVariationAxis>? _variationAxes;
+        private IReadOnlyList<FontVariationNamedInstance>? _namedInstances;
         private ITextShaperTypeface? _textShaperTypeface;
 
         /// <summary>
@@ -343,6 +345,18 @@ namespace Avalonia.Media
         }
 
         /// <summary>
+        /// Gets the variation axes supported by this font face.
+        /// </summary>
+        /// <remarks>The returned list is empty when this font face does not expose variation axes.</remarks>
+        public IReadOnlyList<FontVariationAxis> VariationAxes => _variationAxes ??= LoadVariationAxes();
+
+        /// <summary>
+        /// Gets the named design-space instances exposed by this variable font face.
+        /// </summary>
+        /// <remarks>The returned list is empty when this font face does not expose named instances.</remarks>
+        public IReadOnlyList<FontVariationNamedInstance> NamedInstances => _namedInstances ??= LoadNamedInstances();
+
+        /// <summary>
         /// Gets the platform-specific typeface associated with this font.
         /// </summary>
         public IPlatformTypeface PlatformTypeface { get; }
@@ -580,6 +594,57 @@ namespace Avalonia.Media
             }
 
             return supportedFeatures;
+        }
+
+        internal string GetOpenTypeName(ushort nameId)
+        {
+            return _nameTable?.GetNameById((ushort)CultureInfo.InvariantCulture.LCID, nameId) ?? string.Empty;
+        }
+
+        private IReadOnlyList<FontVariationAxis> LoadVariationAxes()
+        {
+            var renderingAxes = PlatformTypeface is IFontVariationMetadataProvider provider ?
+                provider.VariationAxes :
+                Array.Empty<FontVariationAxis>();
+
+            if (renderingAxes.Count == 0)
+            {
+                return renderingAxes;
+            }
+
+            var textShaperTypeface = AvaloniaLocator.Current.GetService<ITextShaperImpl>()?.CreateTypeface(this);
+
+            if (textShaperTypeface is not ITextShaperFontVariationMetadataProvider metadataProvider)
+            {
+                textShaperTypeface?.Dispose();
+
+                return renderingAxes;
+            }
+
+            using var typeface = textShaperTypeface;
+
+            return metadataProvider.GetVariationAxes(renderingAxes);
+        }
+
+        private IReadOnlyList<FontVariationNamedInstance> LoadNamedInstances()
+        {
+            if (VariationAxes.Count == 0)
+            {
+                return Array.Empty<FontVariationNamedInstance>();
+            }
+
+            var textShaperTypeface = AvaloniaLocator.Current.GetService<ITextShaperImpl>()?.CreateTypeface(this);
+
+            if (textShaperTypeface is not ITextShaperFontVariationMetadataProvider metadataProvider)
+            {
+                textShaperTypeface?.Dispose();
+
+                return Array.Empty<FontVariationNamedInstance>();
+            }
+
+            using var typeface = textShaperTypeface;
+
+            return metadataProvider.NamedInstances;
         }
 
         private static FontStyle GetFontStyle(OS2Table? oS2Table, HeadTable? headTable, PostTable postTable)

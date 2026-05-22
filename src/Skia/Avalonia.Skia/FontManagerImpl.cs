@@ -6,12 +6,13 @@ using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
 using Avalonia.Media;
+using Avalonia.Media.TextFormatting;
 using Avalonia.Platform;
 using SkiaSharp;
 
 namespace Avalonia.Skia
 {
-    internal class FontManagerImpl : IFontManagerImpl
+    internal class FontManagerImpl : IFontManagerImpl, IFontManagerImplWithVariations
     {
         static FontManagerImpl()
         {
@@ -104,6 +105,28 @@ namespace Avalonia.Skia
         public bool TryCreateGlyphTypeface(string familyName, FontStyle style, FontWeight weight,
             FontStretch stretch, [NotNullWhen(true)] out IPlatformTypeface? platformTypeface)
         {
+            return TryCreateGlyphTypefaceCore(familyName, style, weight, stretch, null, out platformTypeface);
+        }
+
+        public bool TryCreateGlyphTypeface(
+            string familyName,
+            FontStyle style,
+            FontWeight weight,
+            FontStretch stretch,
+            EffectiveVariationCoordinates variationCoordinates,
+            [NotNullWhen(true)] out IPlatformTypeface? platformTypeface)
+        {
+            return TryCreateGlyphTypefaceCore(familyName, style, weight, stretch, variationCoordinates, out platformTypeface);
+        }
+
+        private bool TryCreateGlyphTypefaceCore(
+            string familyName,
+            FontStyle style,
+            FontWeight weight,
+            FontStretch stretch,
+            EffectiveVariationCoordinates? variationCoordinates,
+            [NotNullWhen(true)] out IPlatformTypeface? platformTypeface)
+        {
             platformTypeface = null;
 
             var fontStyle = new SKFontStyle((SKFontStyleWeight)weight, (SKFontStyleWidth)stretch, style.ToSkia());
@@ -127,7 +150,7 @@ namespace Avalonia.Skia
                 fontSimulations |= FontSimulations.Oblique;
             }
 
-            platformTypeface = new SkiaTypeface(skTypeface, fontSimulations);
+            platformTypeface = new SkiaTypeface(skTypeface, fontSimulations, variationCoordinates);
 
             return true;
         }

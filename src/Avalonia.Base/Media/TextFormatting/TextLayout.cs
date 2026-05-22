@@ -56,10 +56,61 @@ namespace Avalonia.Media.TextFormatting
             FontFeatureCollection? fontFeatures = null,
             IReadOnlyList<ValueSpan<TextRunProperties>>? textStyleOverrides = null,
             TextRunCache? textRunCache = null)
+            : this(text, typeface, fontSize, foreground, textAlignment, textWrapping, textTrimming,
+                textDecorations, flowDirection, maxWidth, maxHeight, lineHeight, letterSpacing,
+                maxLines, fontFeatures, null, FontOpticalSizing.Auto, null, textStyleOverrides, textRunCache)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TextLayout" /> class.
+        /// </summary>
+        /// <param name="text">The text.</param>
+        /// <param name="typeface">The typeface.</param>
+        /// <param name="fontSize">Size of the font.</param>
+        /// <param name="foreground">The foreground.</param>
+        /// <param name="textAlignment">The text alignment.</param>
+        /// <param name="textWrapping">The text wrapping.</param>
+        /// <param name="textTrimming">The text trimming.</param>
+        /// <param name="textDecorations">The text decorations.</param>
+        /// <param name="flowDirection">The text flow direction.</param>
+        /// <param name="maxWidth">The maximum width.</param>
+        /// <param name="maxHeight">The maximum height.</param>
+        /// <param name="lineHeight">The height of each line of text.</param>
+        /// <param name="letterSpacing">The letter spacing that is applied to rendered glyphs.</param>
+        /// <param name="maxLines">The maximum number of text lines.</param>
+        /// <param name="fontFeatures">Optional list of turned on/off features.</param>
+        /// <param name="fontVariations">Optional list of font variation settings.</param>
+        /// <param name="fontOpticalSizing">The font optical sizing behavior.</param>
+        /// <param name="fontVariationNamedInstance">The selected variable font named instance.</param>
+        /// <param name="textStyleOverrides">The text style overrides.</param>
+        /// <param name="textRunCache">An optional cache for shaped text runs to avoid redundant shaping.</param>
+        public TextLayout(
+            string? text,
+            Typeface typeface,
+            double fontSize,
+            IBrush? foreground,
+            TextAlignment textAlignment,
+            TextWrapping textWrapping,
+            TextTrimming? textTrimming,
+            TextDecorationCollection? textDecorations,
+            FlowDirection flowDirection,
+            double maxWidth,
+            double maxHeight,
+            double lineHeight,
+            double letterSpacing,
+            int maxLines,
+            FontFeatureCollection? fontFeatures,
+            FontVariationCollection? fontVariations,
+            FontOpticalSizing fontOpticalSizing,
+            FontVariationNamedInstance? fontVariationNamedInstance,
+            IReadOnlyList<ValueSpan<TextRunProperties>>? textStyleOverrides = null,
+            TextRunCache? textRunCache = null)
         {
             _paragraphProperties =
                 CreateTextParagraphProperties(typeface, fontSize, foreground, textAlignment, textWrapping,
-                    textDecorations, flowDirection, lineHeight, letterSpacing, fontFeatures);
+                    textDecorations, flowDirection, lineHeight, letterSpacing, fontFeatures, fontVariations,
+                    fontVariationNamedInstance, fontOpticalSizing);
 
             _textSource = new FormattedTextSource(text ?? "", _paragraphProperties.DefaultTextRunProperties, textStyleOverrides);
 
@@ -74,6 +125,35 @@ namespace Avalonia.Media.TextFormatting
             _textRunCache = textRunCache;
 
             _textLines = CreateTextLines();
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TextLayout" /> class.
+        /// </summary>
+        public TextLayout(
+            string? text,
+            Typeface typeface,
+            double fontSize,
+            IBrush? foreground,
+            TextAlignment textAlignment,
+            TextWrapping textWrapping,
+            TextTrimming? textTrimming,
+            TextDecorationCollection? textDecorations,
+            FlowDirection flowDirection,
+            double maxWidth,
+            double maxHeight,
+            double lineHeight,
+            double letterSpacing,
+            int maxLines,
+            FontFeatureCollection? fontFeatures,
+            FontVariationCollection? fontVariations,
+            FontOpticalSizing fontOpticalSizing,
+            IReadOnlyList<ValueSpan<TextRunProperties>>? textStyleOverrides = null,
+            TextRunCache? textRunCache = null)
+            : this(text, typeface, fontSize, foreground, textAlignment, textWrapping, textTrimming,
+                textDecorations, flowDirection, maxWidth, maxHeight, lineHeight, letterSpacing,
+                maxLines, fontFeatures, fontVariations, fontOpticalSizing, null, textStyleOverrides, textRunCache)
+        {
         }
 
         /// <summary>
@@ -101,7 +181,7 @@ namespace Avalonia.Media.TextFormatting
             IReadOnlyList<ValueSpan<TextRunProperties>>? textStyleOverrides)
             : this(text, typeface, fontSize, foreground, textAlignment, textWrapping, textTrimming,
                 textDecorations, flowDirection, maxWidth, maxHeight, lineHeight, letterSpacing,
-                maxLines, fontFeatures, textStyleOverrides, null)
+                maxLines, fontFeatures, null, FontOpticalSizing.Auto, null, textStyleOverrides, null)
         {
         }
 
@@ -548,7 +628,25 @@ namespace Avalonia.Media.TextFormatting
             TextDecorationCollection? textDecorations, FlowDirection flowDirection, double lineHeight,
             double letterSpacing, FontFeatureCollection? features)
         {
-            var textRunStyle = new GenericTextRunProperties(typeface, fontSize, textDecorations, foreground, fontFeatures: features);
+            return CreateTextParagraphProperties(typeface, fontSize, foreground, textAlignment, textWrapping,
+                textDecorations, flowDirection, lineHeight, letterSpacing, features, null, null, FontOpticalSizing.Auto);
+        }
+
+        internal static TextParagraphProperties CreateTextParagraphProperties(Typeface typeface, double fontSize,
+            IBrush? foreground, TextAlignment textAlignment, TextWrapping textWrapping,
+            TextDecorationCollection? textDecorations, FlowDirection flowDirection, double lineHeight,
+            double letterSpacing, FontFeatureCollection? features, FontVariationCollection? variations,
+            FontVariationNamedInstance? namedInstance, FontOpticalSizing opticalSizing)
+        {
+            if (namedInstance.HasValue && !typeface.NamedInstance.HasValue)
+            {
+                typeface = new Typeface(typeface.FontFamily, typeface.Style, typeface.Weight, typeface.Stretch,
+                    variations ?? typeface.Variations, opticalSizing, namedInstance);
+            }
+
+            var textRunStyle = new GenericTextRunProperties(typeface, fontSize, textDecorations, foreground,
+                fontFeatures: features, fontVariations: variations, fontVariationNamedInstance: namedInstance,
+                fontOpticalSizing: opticalSizing);
 
             return new GenericTextParagraphProperties(flowDirection, textAlignment, true, false,
                 textRunStyle, textWrapping, lineHeight, 0, letterSpacing);

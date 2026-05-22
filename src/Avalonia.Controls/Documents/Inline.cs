@@ -77,7 +77,10 @@ namespace Avalonia.Controls.Documents
                 FontFamily, 
                 FontStyle, 
                 FontWeight, 
-                FontStretch);
+                FontStretch,
+                FontVariations,
+                FontOpticalSizing,
+                FontVariationNamedInstance);
 
             return new GenericTextRunProperties(
                 typeface,
@@ -87,7 +90,10 @@ namespace Avalonia.Controls.Documents
                 parentOrSelfBackground,
                 BaselineAlignment,
                 null,
-                FontFeatures);
+                FontFeatures,
+                FontVariations,
+                FontVariationNamedInstance,
+                FontOpticalSizing);
         }
 
         /// <summary>

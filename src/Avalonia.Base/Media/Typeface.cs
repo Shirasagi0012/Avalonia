@@ -1,6 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Globalization;
 using System.Text;
+using Avalonia.Media.TextFormatting;
 using Avalonia.Utilities;
 
 namespace Avalonia.Media
@@ -11,6 +15,8 @@ namespace Avalonia.Media
     [DebuggerDisplay("Name = {FontFamily.Name}, Weight = {Weight}, Style = {Style}")]
     public readonly struct Typeface : IEquatable<Typeface>
     {
+        private readonly FontVariation[]? _variations;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="Typeface"/> class.
         /// </summary>
@@ -22,6 +28,27 @@ namespace Avalonia.Media
             FontStyle style = FontStyle.Normal,
             FontWeight weight = FontWeight.Normal,
             FontStretch stretch = FontStretch.Normal)
+            : this(fontFamily, style, weight, stretch, null, default, null)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Typeface"/> class.
+        /// </summary>
+        /// <param name="fontFamily">The font family.</param>
+        /// <param name="style">The font style.</param>
+        /// <param name="weight">The font weight.</param>
+        /// <param name="stretch">The font stretch.</param>
+        /// <param name="variations">The font variation settings.</param>
+        /// <param name="opticalSizing">The optical sizing policy.</param>
+        /// <param name="namedInstance">The named variation instance.</param>
+        public Typeface(FontFamily fontFamily,
+            FontStyle style,
+            FontWeight weight,
+            FontStretch stretch,
+            FontVariationCollection? variations,
+            FontOpticalSizing opticalSizing = default,
+            FontVariationNamedInstance? namedInstance = null)
         {
             if (weight <= 0)
             {
@@ -37,6 +64,9 @@ namespace Avalonia.Media
             Style = style;
             Weight = weight;
             Stretch = stretch;
+            _variations = SnapshotVariations(variations);
+            OpticalSizing = opticalSizing;
+            NamedInstance = SnapshotNamedInstance(namedInstance);
         }
 
         /// <summary>
@@ -52,6 +82,28 @@ namespace Avalonia.Media
             FontStretch stretch = FontStretch.Normal)
             : this(string.IsNullOrEmpty(fontFamilyName) ? FontFamily.Default : new FontFamily(fontFamilyName),
                   style, weight, stretch)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Typeface"/> class.
+        /// </summary>
+        /// <param name="fontFamilyName">The name of the font family.</param>
+        /// <param name="style">The font style.</param>
+        /// <param name="weight">The font weight.</param>
+        /// <param name="stretch">The font stretch.</param>
+        /// <param name="variations">The font variation settings.</param>
+        /// <param name="opticalSizing">The optical sizing policy.</param>
+        /// <param name="namedInstance">The named variation instance.</param>
+        public Typeface(string fontFamilyName,
+            FontStyle style,
+            FontWeight weight,
+            FontStretch stretch,
+            FontVariationCollection? variations,
+            FontOpticalSizing opticalSizing = default,
+            FontVariationNamedInstance? namedInstance = null)
+            : this(string.IsNullOrEmpty(fontFamilyName) ? FontFamily.Default : new FontFamily(fontFamilyName),
+                  style, weight, stretch, variations, opticalSizing, namedInstance)
         {
         }
 
@@ -76,6 +128,23 @@ namespace Avalonia.Media
         /// Gets the font stretch.
         /// </summary>
         public FontStretch Stretch { get; }
+
+        /// <summary>
+        /// Gets the font variation settings.
+        /// </summary>
+        public FontVariationCollection? Variations => _variations is { Length: > 0 } variations ? new FontVariationCollection(variations) : null;
+
+        /// <summary>
+        /// Gets the optical sizing policy.
+        /// </summary>
+        public FontOpticalSizing OpticalSizing { get; }
+
+        /// <summary>
+        /// Gets the named variation instance.
+        /// </summary>
+        public FontVariationNamedInstance? NamedInstance { get; }
+
+        internal IReadOnlyList<FontVariation>? FontVariations => _variations;
 
         /// <summary>
         /// Gets the glyph typeface.
@@ -115,7 +184,10 @@ namespace Avalonia.Media
         public bool Equals(Typeface other)
         {
             return FontFamily == other.FontFamily && Style == other.Style && 
-                   Weight == other.Weight && Stretch == other.Stretch;
+                   Weight == other.Weight && Stretch == other.Stretch &&
+                   OpticalSizing == other.OpticalSizing &&
+                   VariationsEqual(_variations, other._variations) &&
+                   NamedInstancesEqual(NamedInstance, other.NamedInstance);
         }
 
         public override int GetHashCode()
@@ -126,8 +198,74 @@ namespace Avalonia.Media
                 hashCode = (hashCode * 397) ^ (int)Style;
                 hashCode = (hashCode * 397) ^ (int)Weight;
                 hashCode = (hashCode * 397) ^ (int)Stretch;
+                hashCode = (hashCode * 397) ^ (int)OpticalSizing;
+
+                if (_variations is { Length: > 0 })
+                {
+                    for (var i = 0; i < _variations.Length; i++)
+                    {
+                        hashCode = (hashCode * 397) ^ _variations[i].GetHashCode();
+                    }
+                }
+
+                if (NamedInstance is { } namedInstance)
+                {
+                    hashCode = (hashCode * 397) ^ namedInstance.InstanceIndex;
+                    hashCode = (hashCode * 397) ^ (namedInstance.DisplayName?.GetHashCode() ?? 0);
+                    hashCode = (hashCode * 397) ^ (namedInstance.PostScriptName?.GetHashCode() ?? 0);
+
+                    for (var i = 0; i < namedInstance.Coordinates.Count; i++)
+                    {
+                        var coordinate = namedInstance.Coordinates[i];
+                        hashCode = (hashCode * 397) ^ StringComparer.Ordinal.GetHashCode(coordinate.Key);
+                        hashCode = (hashCode * 397) ^ coordinate.Value.GetHashCode();
+                    }
+                }
+
                 return hashCode;
             }
+        }
+
+        public override string ToString()
+        {
+            var typeName = typeof(Typeface).FullName ?? nameof(Typeface);
+
+            if (!HasVariationData())
+            {
+                return typeName;
+            }
+
+            var builder = new StringBuilder(typeName);
+            builder.Append(" Variations=[");
+
+            if (_variations is { Length: > 0 })
+            {
+                for (var i = 0; i < _variations.Length; i++)
+                {
+                    if (i > 0)
+                    {
+                        builder.Append(", ");
+                    }
+
+                    builder.Append(_variations[i]);
+                }
+            }
+
+            builder.Append(']');
+
+            if (OpticalSizing != default)
+            {
+                builder.Append(", OpticalSizing=");
+                builder.Append(OpticalSizing);
+            }
+
+            if (NamedInstance is { } namedInstance)
+            {
+                builder.Append(", NamedInstance=");
+                builder.Append(namedInstance.InstanceIndex.ToString(CultureInfo.InvariantCulture));
+            }
+
+            return builder.ToString();
         }
 
         /// <summary>
@@ -203,7 +341,136 @@ namespace Avalonia.Media
             normalizedFamilyName = (normalizedFamilyNameBuilder?.ToString() ?? normalizedFamilyName).TrimEnd();
 
             //Preserve old font source
-            return new Typeface(FontFamily, style, weight, stretch);
+            return new Typeface(FontFamily, style, weight, stretch, Variations, OpticalSizing, NamedInstance);
+        }
+
+        internal Typeface WithFontFamily(FontFamily fontFamily)
+        {
+            return new Typeface(fontFamily, Style, Weight, Stretch, Variations, OpticalSizing, NamedInstance);
+        }
+
+        private bool HasVariationData()
+        {
+            return _variations is { Length: > 0 } || OpticalSizing != default || NamedInstance.HasValue;
+        }
+
+        private static FontVariation[]? SnapshotVariations(IReadOnlyList<FontVariation>? variations)
+        {
+            if (variations is null || variations.Count == 0)
+            {
+                return null;
+            }
+
+            var byTag = new Dictionary<string, FontVariation>(variations.Count, StringComparer.Ordinal);
+
+            for (var i = 0; i < variations.Count; i++)
+            {
+                var variation = variations[i];
+                byTag[variation.Tag] = variation;
+            }
+
+            if (byTag.Count == 0)
+            {
+                return null;
+            }
+
+            var canonical = new FontVariation[byTag.Count];
+            var index = 0;
+
+            foreach (var variation in byTag.Values)
+            {
+                canonical[index++] = variation;
+            }
+
+            Array.Sort(canonical, static (left, right) => string.CompareOrdinal(left.Tag, right.Tag));
+
+            return canonical;
+        }
+
+        private static FontVariationNamedInstance? SnapshotNamedInstance(FontVariationNamedInstance? namedInstance)
+        {
+            if (namedInstance is not { } value)
+            {
+                return null;
+            }
+
+            var byTag = new Dictionary<string, float>(value.Coordinates.Count, StringComparer.Ordinal);
+
+            for (var i = 0; i < value.Coordinates.Count; i++)
+            {
+                var coordinate = value.Coordinates[i];
+                byTag[coordinate.Key] = coordinate.Value;
+            }
+
+            var coordinates = new KeyValuePair<string, float>[byTag.Count];
+            var index = 0;
+
+            foreach (var coordinate in byTag)
+            {
+                coordinates[index++] = coordinate;
+            }
+
+            Array.Sort(coordinates, static (left, right) => string.CompareOrdinal(left.Key, right.Key));
+
+            return new FontVariationNamedInstance(
+                value.InstanceIndex,
+                value.DisplayName,
+                value.PostScriptName,
+                new ReadOnlyCollection<KeyValuePair<string, float>>(coordinates));
+        }
+
+        private static bool VariationsEqual(IReadOnlyList<FontVariation>? left, IReadOnlyList<FontVariation>? right)
+        {
+            var leftCount = left?.Count ?? 0;
+            var rightCount = right?.Count ?? 0;
+
+            if (leftCount != rightCount)
+            {
+                return false;
+            }
+
+            for (var i = 0; i < leftCount; i++)
+            {
+                if (!left![i].Equals(right![i]))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static bool NamedInstancesEqual(FontVariationNamedInstance? left, FontVariationNamedInstance? right)
+        {
+            if (!left.HasValue || !right.HasValue)
+            {
+                return left.HasValue == right.HasValue;
+            }
+
+            var leftValue = left.Value;
+            var rightValue = right.Value;
+
+            if (leftValue.InstanceIndex != rightValue.InstanceIndex ||
+                !string.Equals(leftValue.DisplayName, rightValue.DisplayName, StringComparison.Ordinal) ||
+                !string.Equals(leftValue.PostScriptName, rightValue.PostScriptName, StringComparison.Ordinal) ||
+                leftValue.Coordinates.Count != rightValue.Coordinates.Count)
+            {
+                return false;
+            }
+
+            for (var i = 0; i < leftValue.Coordinates.Count; i++)
+            {
+                var leftCoordinate = leftValue.Coordinates[i];
+                var rightCoordinate = rightValue.Coordinates[i];
+
+                if (!string.Equals(leftCoordinate.Key, rightCoordinate.Key, StringComparison.Ordinal) ||
+                    Math.Abs(leftCoordinate.Value - rightCoordinate.Value) > EffectiveVariationResolver.CoordinateTolerance)
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
     }
 }

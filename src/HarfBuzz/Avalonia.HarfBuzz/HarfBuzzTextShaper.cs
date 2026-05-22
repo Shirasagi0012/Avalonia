@@ -60,6 +60,8 @@ namespace Avalonia.Harfbuzz
                 usedCulture);
 
             var font = harfBuzzTypeface.HBFont;
+            var variationCoordinates = ResolveVariationCoordinates(options);
+            harfBuzzTypeface.SetVariations(variationCoordinates);
 
             font.Shape(buffer, GetFeatures(options));
 
@@ -234,6 +236,33 @@ namespace Avalonia.Harfbuzz
             }
 
             return features;
+        }
+
+        private static EffectiveVariationCoordinates ResolveVariationCoordinates(TextShaperOptions options)
+        {
+            if (options.GlyphTypeface.VariationAxes.Count == 0)
+            {
+                return EffectiveVariationCoordinates.Empty;
+            }
+
+            var sourceTypeface = options.SourceTypeface == default ?
+                new Typeface(
+                    FontFamily.Default,
+                    options.GlyphTypeface.Style,
+                    options.GlyphTypeface.Weight,
+                    options.GlyphTypeface.Stretch,
+                    options.FontVariations,
+                    options.FontOpticalSizing,
+                    options.FontVariationNamedInstance) :
+                options.SourceTypeface;
+
+            return EffectiveVariationResolver.Resolve(new VariationResolverInput(
+                options.GlyphTypeface.VariationAxes,
+                sourceTypeface,
+                options.FontRenderingEmSize,
+                options.FontOpticalSizing,
+                EffectiveVariationResolver.ResolveNamedInstanceForFace(sourceTypeface.NamedInstance, options.GlyphTypeface.NamedInstances),
+                options.FontVariations));
         }
     }
 }

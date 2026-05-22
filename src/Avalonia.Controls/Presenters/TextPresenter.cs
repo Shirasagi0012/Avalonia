@@ -175,6 +175,33 @@ namespace Avalonia.Controls.Presenters
         }
 
         /// <summary>
+        /// Gets or sets the font variations.
+        /// </summary>
+        public FontVariationCollection? FontVariations
+        {
+            get => TextElement.GetFontVariations(this);
+            set => TextElement.SetFontVariations(this, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the selected variable font named instance.
+        /// </summary>
+        public FontVariationNamedInstance? FontVariationNamedInstance
+        {
+            get => TextElement.GetFontVariationNamedInstance(this);
+            set => TextElement.SetFontVariationNamedInstance(this, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the font optical sizing behavior.
+        /// </summary>
+        public FontOpticalSizing FontOpticalSizing
+        {
+            get => TextElement.GetFontOpticalSizing(this);
+            set => TextElement.SetFontOpticalSizing(this, value);
+        }
+
+        /// <summary>
         /// Gets or sets the font size.
         /// </summary>
         public double FontSize
@@ -367,8 +394,11 @@ namespace Avalonia.Controls.Presenters
                 LetterSpacing,
                 0,
                 FontFeatures,
-                textStyleOverrides,
-                _textRunCache ??= new TextRunCache());
+                FontVariations,
+                FontOpticalSizing,
+                fontVariationNamedInstance: FontVariationNamedInstance,
+                textStyleOverrides: textStyleOverrides,
+                textRunCache: _textRunCache ??= new TextRunCache());
 
             return textLayout;
         }
@@ -555,7 +585,8 @@ namespace Avalonia.Controls.Presenters
             var caretIndex = CaretIndex;
             var preeditText = PreeditText;
             var text = GetCombinedText(Text, caretIndex, preeditText);
-            var typeface = new Typeface(FontFamily, FontStyle, FontWeight, FontStretch);
+            var typeface = new Typeface(FontFamily, FontStyle, FontWeight, FontStretch,
+                FontVariations, FontOpticalSizing, FontVariationNamedInstance);
             var selectionStart = SelectionStart;
             var selectionEnd = SelectionEnd;
             var start = Math.Min(selectionStart, selectionEnd);
@@ -573,7 +604,10 @@ namespace Avalonia.Controls.Presenters
                             FontSize,
                             TextDecorations.Underline,
                             foreground,
-                            fontFeatures: FontFeatures));
+                            fontFeatures: FontFeatures,
+                            fontVariations: FontVariations,
+                            fontVariationNamedInstance: FontVariationNamedInstance,
+                            fontOpticalSizing: FontOpticalSizing));
 
                 textStyleOverrides = new[]
                 {
@@ -591,7 +625,10 @@ namespace Avalonia.Controls.Presenters
                             typeface,
                             FontSize,
                             foregroundBrush: SelectionForegroundBrush,
-                            fontFeatures: FontFeatures))
+                            fontFeatures: FontFeatures,
+                            fontVariations: FontVariations,
+                            fontVariationNamedInstance: FontVariationNamedInstance,
+                            fontOpticalSizing: FontOpticalSizing))
                     };
                 }
             }
@@ -1058,6 +1095,10 @@ namespace Avalonia.Controls.Presenters
                 case nameof(FontWeight):
                 case nameof(FontFamily):
                 case nameof(FontStretch):
+                case nameof(FontFeatures):
+                case nameof(FontVariations):
+                case nameof(FontVariationNamedInstance):
+                case nameof(FontOpticalSizing):
                 case nameof(Text):
                 case nameof(LetterSpacing):
                 case nameof(PasswordChar):

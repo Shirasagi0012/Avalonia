@@ -50,6 +50,7 @@ partial class Animation
         RegisterAnimator<RelativeScalar, RelativeScalarAnimator>();
         RegisterAnimator<Size, SizeAnimator>();
         RegisterAnimator<Thickness, ThicknessAnimator>();
+        RegisterCustomAnimator<FontVariationCollection, FontVariationCollectionAnimator>();
     }
 
     /// <summary>

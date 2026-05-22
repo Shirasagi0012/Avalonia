@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Globalization;
+using System.Text;
+using Avalonia.Logging;
 using Avalonia.Media.TextFormatting.Unicode;
 using static Avalonia.Media.TextFormatting.FormattingObjectPool;
 
@@ -130,8 +133,20 @@ namespace Avalonia.Media.TextFormatting
             if (matchFound)
             {
                 // Fallback found
-                if(fontManager.TryGetGlyphTypeface(fallbackTypeface, out var fallbackGlyphTypeface))
+                if(fontManager.TryGetGlyphTypeface(
+                       fallbackTypeface,
+                       defaultProperties.FontRenderingEmSize,
+                       defaultProperties.FontOpticalSizing,
+                       out var fallbackGlyphTypeface))
                 {
+                    LogFallbackVariationCoordinates(
+                        defaultTypeface,
+                        defaultGlyphTypeface,
+                        fallbackTypeface,
+                        fallbackGlyphTypeface,
+                        defaultProperties.FontRenderingEmSize,
+                        defaultProperties.FontOpticalSizing);
+
                     if (TryGetShapeableLength(textSpan, fallbackGlyphTypeface, defaultGlyphTypeface, out count))
                     {
                         return new UnshapedTextRun(text.Slice(0, count), defaultProperties.WithTypeface(fallbackTypeface),
@@ -155,6 +170,59 @@ namespace Avalonia.Media.TextFormatting
             }
 
             return new UnshapedTextRun(text.Slice(0, count), defaultProperties, biDiLevel);
+        }
+
+        private static void LogFallbackVariationCoordinates(
+            Typeface primaryTypeface,
+            GlyphTypeface primaryGlyphTypeface,
+            Typeface fallbackTypeface,
+            GlyphTypeface fallbackGlyphTypeface,
+            double fontSize,
+            FontOpticalSizing opticalSizing)
+        {
+            var primaryCoordinates = FontManager.ResolveVariationCoordinates(
+                primaryTypeface,
+                primaryGlyphTypeface,
+                fontSize,
+                opticalSizing);
+            var fallbackCoordinates = FontManager.ResolveVariationCoordinates(
+                fallbackTypeface,
+                fallbackGlyphTypeface,
+                fontSize,
+                opticalSizing);
+
+            Logger.TryGet(LogEventLevel.Information, LogArea.Fonts)?.Log(
+                null,
+                "Variable font fallback coordinates. Primary face '{PrimaryFamily}': {PrimaryCoordinates}; fallback face '{FallbackFamily}': {FallbackCoordinates}",
+                primaryGlyphTypeface.FamilyName,
+                FormatCoordinates(primaryCoordinates),
+                fallbackGlyphTypeface.FamilyName,
+                FormatCoordinates(fallbackCoordinates));
+        }
+
+        private static string FormatCoordinates(EffectiveVariationCoordinates coordinates)
+        {
+            if (!coordinates.HasVariations)
+            {
+                return "<none>";
+            }
+
+            var builder = new StringBuilder();
+
+            for (var i = 0; i < coordinates.Count; i++)
+            {
+                if (i > 0)
+                {
+                    builder.Append(';');
+                }
+
+                var coordinate = coordinates[i];
+                builder.Append(coordinate.Key);
+                builder.Append('=');
+                builder.Append(coordinate.Value.ToString("R", CultureInfo.InvariantCulture));
+            }
+
+            return builder.ToString();
         }
 
         /// <summary>

@@ -182,14 +182,17 @@ namespace Avalonia.Controls
 
         protected override TextLayout CreateTextLayout(string? text)
         {
-            var typeface = new Typeface(FontFamily, FontStyle, FontWeight, FontStretch);
+            var typeface = new Typeface(FontFamily, FontStyle, FontWeight, FontStretch,
+                FontVariations, FontOpticalSizing, FontVariationNamedInstance);
 
             var defaultProperties = new GenericTextRunProperties(
                 typeface,
                 FontSize,
                 TextDecorations,
                 Foreground,
-                fontFeatures: FontFeatures);
+                fontFeatures: FontFeatures,
+                fontVariations: FontVariations,
+                fontOpticalSizing: FontOpticalSizing);
 
             var paragraphProperties = new GenericTextParagraphProperties(FlowDirection, TextAlignment, true, false,
                 defaultProperties, TextWrapping, LineHeight, 0, LetterSpacing)
@@ -234,10 +237,13 @@ namespace Avalonia.Controls
                                 overlapStart,
                                 overlapLength,
                                 new GenericTextRunProperties(
-                                    textRun.Properties?.Typeface ?? typeface,
-                                    FontSize,
-                                    foregroundBrush: SelectionForegroundBrush,
-                                    fontFeatures: textRun.Properties?.FontFeatures ?? FontFeatures)));
+                                     textRun.Properties?.Typeface ?? typeface,
+                                      FontSize,
+                                      foregroundBrush: SelectionForegroundBrush,
+                                      fontFeatures: textRun.Properties?.FontFeatures ?? FontFeatures,
+                                      fontVariations: textRun.Properties?.FontVariations ?? FontVariations,
+                                      fontVariationNamedInstance: textRun.Properties?.FontVariationNamedInstance ?? FontVariationNamedInstance,
+                                      fontOpticalSizing: textRun.Properties?.FontOpticalSizing ?? FontOpticalSizing)));
 
                         accumulatedLength += runLength;
                     }
@@ -248,11 +254,14 @@ namespace Avalonia.Controls
                     [
                         new ValueSpan<TextRunProperties>(start, length,
                             new GenericTextRunProperties(
-                                typeface,
-                                FontSize,
-                                foregroundBrush: SelectionForegroundBrush,
-                                fontFeatures: FontFeatures))
-                    ];
+                                 typeface,
+                                 FontSize,
+                                  foregroundBrush: SelectionForegroundBrush,
+                                  fontFeatures: FontFeatures,
+                                  fontVariations: FontVariations,
+                                  fontVariationNamedInstance: FontVariationNamedInstance,
+                                  fontOpticalSizing: FontOpticalSizing))
+                     ];
                 }
             }
 

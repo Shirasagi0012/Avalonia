@@ -31,6 +31,18 @@ namespace Avalonia.Media.Fonts
             FontStretch stretch, [NotNullWhen(true)] out GlyphTypeface? glyphTypeface);
 
         /// <summary>
+        /// Try to get a glyph typeface for the given typeface request, including optional variation data.
+        /// </summary>
+        /// <param name="typeface">The requested typeface.</param>
+        /// <param name="glyphTypeface">The glyph typeface.</param>
+        /// <returns>Returns <c>true</c> if a glyph typeface can be found; otherwise, <c>false</c>.</returns>
+        bool TryGetGlyphTypeface(Typeface typeface, [NotNullWhen(true)] out GlyphTypeface? glyphTypeface)
+        {
+            var familyName = typeface.FontFamily.FamilyNames.PrimaryFamilyName;
+            return TryGetGlyphTypeface(familyName, typeface.Style, typeface.Weight, typeface.Stretch, out glyphTypeface);
+        }
+
+        /// <summary>
         ///     Tries to match a specified character to a <see cref="Typeface"/> that supports specified font properties.
         /// </summary>
         /// <param name="codepoint">The codepoint to match against.</param>
@@ -45,6 +57,22 @@ namespace Avalonia.Media.Fonts
         /// </returns>
         bool TryMatchCharacter(int codepoint, FontStyle fontStyle, FontWeight fontWeight,
             FontStretch fontStretch, string? familyName, CultureInfo? culture, out Typeface typeface);
+
+        /// <summary>
+        ///     Tries to match a specified character while preserving optional typeface variation data.
+        /// </summary>
+        /// <param name="codepoint">The codepoint to match against.</param>
+        /// <param name="typeface">The requested typeface.</param>
+        /// <param name="culture">The culture.</param>
+        /// <param name="match">The matching <see cref="Typeface"/>.</param>
+        /// <returns>
+        ///     <c>True</c>, if the <see cref="FontManager"/> could match the character to specified parameters, <c>False</c> otherwise.
+        /// </returns>
+        bool TryMatchCharacter(int codepoint, Typeface typeface, CultureInfo? culture, out Typeface match)
+        {
+            return TryMatchCharacter(codepoint, typeface.Style, typeface.Weight, typeface.Stretch,
+                typeface.FontFamily.Name, culture, out match);
+        }
 
         /// <summary>
         /// Tries to get a list of typefaces for the specified family name.

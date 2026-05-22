@@ -152,6 +152,24 @@ namespace Avalonia.Controls
             TextElement.FontFeaturesProperty.AddOwner<TextBlock>();
 
         /// <summary>
+        /// Defines the <see cref="FontVariations"/> property.
+        /// </summary>
+        public static readonly StyledProperty<FontVariationCollection?> FontVariationsProperty =
+            TextElement.FontVariationsProperty.AddOwner<TextBlock>();
+
+        /// <summary>
+        /// Defines the <see cref="FontVariationNamedInstance"/> property.
+        /// </summary>
+        public static readonly StyledProperty<FontVariationNamedInstance?> FontVariationNamedInstanceProperty =
+            TextElement.FontVariationNamedInstanceProperty.AddOwner<TextBlock>();
+
+        /// <summary>
+        /// Defines the <see cref="FontOpticalSizing"/> property.
+        /// </summary>
+        public static readonly StyledProperty<FontOpticalSizing> FontOpticalSizingProperty =
+            TextElement.FontOpticalSizingProperty.AddOwner<TextBlock>();
+
+        /// <summary>
         /// Defines the <see cref="Inlines"/> property.
         /// </summary>
         public static readonly DirectProperty<TextBlock, InlineCollection?> InlinesProperty =
@@ -348,6 +366,52 @@ namespace Avalonia.Controls
         {
             get => GetValue(FontFeaturesProperty);
             set => SetValue(FontFeaturesProperty, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the variable font axis coordinates used to draw the control's text.
+        /// </summary>
+        /// <remarks>
+        /// Values use CSS <c>font-variation-settings</c> item syntax through <see cref="FontVariationCollection"/>.
+        /// Explicit entries override matching coordinates from <see cref="FontVariationNamedInstance"/>, font weight,
+        /// stretch, italic style, and automatic optical sizing. Unsupported axes are ignored by font faces that do not
+        /// expose matching tags. Changes invalidate text shaping, so animated variation values produce newly shaped
+        /// glyph runs.
+        /// </remarks>
+        public FontVariationCollection? FontVariations
+        {
+            get => GetValue(FontVariationsProperty);
+            set => SetValue(FontVariationsProperty, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the selected variable font named instance used to draw the control's text.
+        /// </summary>
+        /// <remarks>
+        /// The named instance is matched against the selected font face by instance index and PostScript name.
+        /// When it resolves, its coordinates are used as the base variation values and can still be overridden by
+        /// font weight, stretch, italic style, automatic optical sizing, and explicit <see cref="FontVariations"/>
+        /// entries.
+        /// </remarks>
+        public FontVariationNamedInstance? FontVariationNamedInstance
+        {
+            get => GetValue(FontVariationNamedInstanceProperty);
+            set => SetValue(FontVariationNamedInstanceProperty, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the optical sizing behavior for variable fonts used by the control's text.
+        /// </summary>
+        /// <remarks>
+        /// <see cref="Media.FontOpticalSizing.Auto"/> supplies the current font size as the <c>opsz</c> coordinate
+        /// only when the font face supports that axis and <see cref="FontVariations"/> does not contain an explicit
+        /// <c>"opsz"</c> entry. <see cref="Media.FontOpticalSizing.None"/> disables only the automatic coordinate;
+        /// explicit <c>"opsz"</c> entries are still applied.
+        /// </remarks>
+        public FontOpticalSizing FontOpticalSizing
+        {
+            get => GetValue(FontOpticalSizingProperty);
+            set => SetValue(FontOpticalSizingProperty, value);
         }
 
         /// <summary>
@@ -657,14 +721,17 @@ namespace Avalonia.Controls
         /// <returns>A <see cref="TextLayout"/> object.</returns>
         protected virtual TextLayout CreateTextLayout(string? text)
         {
-            var typeface = new Typeface(FontFamily, FontStyle, FontWeight, FontStretch);
+            var typeface = new Typeface(FontFamily, FontStyle, FontWeight, FontStretch,
+                FontVariations, FontOpticalSizing, FontVariationNamedInstance);
 
             var defaultProperties = new GenericTextRunProperties(
                 typeface,
                 FontSize,
                 TextDecorations,
                 Foreground,
-                fontFeatures: FontFeatures);
+                fontFeatures: FontFeatures,
+                fontVariations: FontVariations,
+                fontOpticalSizing: FontOpticalSizing);
 
             var paragraphProperties = new GenericTextParagraphProperties(FlowDirection, IsMeasureValid ? TextAlignment : TextAlignment.Left, true, false,
                 defaultProperties, TextWrapping, LineHeight, 0, LetterSpacing)
@@ -859,6 +926,9 @@ namespace Avalonia.Controls
                 case nameof(Text):
                 case nameof(TextDecorations):
                 case nameof(FontFeatures):
+                case nameof(FontVariations):
+                case nameof(FontVariationNamedInstance):
+                case nameof(FontOpticalSizing):
                 case nameof(Foreground):
                     {
                         InvalidateTextLayout();

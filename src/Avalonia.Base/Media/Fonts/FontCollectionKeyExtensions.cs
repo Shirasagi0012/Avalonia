@@ -1,4 +1,5 @@
 using System;
+using Avalonia.Media.TextFormatting;
 using Avalonia.Platform;
 
 namespace Avalonia.Media.Fonts
@@ -13,6 +14,13 @@ namespace Avalonia.Media.Fonts
         public static FontCollectionKey ToFontCollectionKey(this Typeface typeface)
         {
             return new FontCollectionKey(typeface.Style, typeface.Weight, typeface.Stretch);
+        }
+
+        internal static FontCollectionKey ToFontCollectionKey(
+            this Typeface typeface,
+            EffectiveVariationCoordinates? variationCoordinates)
+        {
+            return new FontCollectionKey(typeface.Style, typeface.Weight, typeface.Stretch, variationCoordinates);
         }
 
         /// <summary>

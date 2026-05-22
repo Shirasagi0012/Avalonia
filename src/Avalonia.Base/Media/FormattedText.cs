@@ -190,7 +190,10 @@ namespace Avalonia.Media
                     runProps.BackgroundBrush,
                     runProps.BaselineAlignment,
                     runProps.CultureInfo,
-                    runProps.FontFeatures
+                    runProps.FontFeatures,
+                    runProps.FontVariations,
+                    runProps.FontVariationNamedInstance,
+                    runProps.FontOpticalSizing
                 );
 
 #pragma warning restore 6506
@@ -246,7 +249,10 @@ namespace Avalonia.Media
                     runProps.BackgroundBrush,
                     runProps.BaselineAlignment,
                     runProps.CultureInfo,
-                    fontFeatures
+                    fontFeatures,
+                    runProps.FontVariations,
+                    runProps.FontVariationNamedInstance,
+                    runProps.FontOpticalSizing
                 );
 
 #pragma warning restore 6506
@@ -254,7 +260,85 @@ namespace Avalonia.Media
                     newProps, formatRider.SpanPosition);
             }
         }
-        
+
+        /// <summary>
+        /// Gets or sets the font variations for the text object.
+        /// </summary>
+        public FontVariationCollection? FontVariations
+        {
+            get
+            {
+                if (_text.Length == 0)
+                {
+                    return _defaultParaProps.DefaultTextRunProperties.FontVariations;
+                }
+
+                var formatRider = new SpanRider(_formatRuns, _latestPosition, 0);
+
+                return ((GenericTextRunProperties)formatRider.CurrentElement!).FontVariations;
+            }
+            set => SetFontVariations(value);
+        }
+
+        /// <summary>
+        /// Sets or changes the font variations for the text object.
+        /// </summary>
+        /// <param name="fontVariations">Variation collection.</param>
+        public void SetFontVariations(FontVariationCollection? fontVariations)
+        {
+            SetFontVariations(fontVariations, 0, _text.Length);
+        }
+
+        /// <summary>
+        /// Sets or changes the font variations for the text object.
+        /// </summary>
+        /// <param name="fontVariations">Variation collection.</param>
+        /// <param name="startIndex">The start index of initial character to apply the change to.</param>
+        /// <param name="count">The number of characters the change should be applied to.</param>
+        public void SetFontVariations(FontVariationCollection? fontVariations, int startIndex, int count)
+        {
+            var limit = ValidateRange(startIndex, count);
+            for (var i = startIndex; i < limit;)
+            {
+                var formatRider = new SpanRider(_formatRuns, _latestPosition, i);
+                i = Math.Min(limit, i + formatRider.Length);
+
+#pragma warning disable 6506
+                // Presharp warns that runProps is not validated, but it can never be null
+                // because the rider is already checked to be in range
+
+                if (!(formatRider.CurrentElement is GenericTextRunProperties runProps))
+                {
+                    throw new NotSupportedException($"{nameof(runProps)} can not be null.");
+                }
+
+                if ((fontVariations == null && runProps.FontVariations == null) ||
+                    (fontVariations != null && runProps.FontVariations != null &&
+                     fontVariations.SequenceEqual(runProps.FontVariations)))
+                {
+                    continue;
+                }
+
+                var newProps = new GenericTextRunProperties(
+                    runProps.Typeface,
+                    runProps.FontRenderingEmSize,
+                    runProps.TextDecorations,
+                    runProps.ForegroundBrush,
+                    runProps.BackgroundBrush,
+                    runProps.BaselineAlignment,
+                    runProps.CultureInfo,
+                    runProps.FontFeatures,
+                    fontVariations,
+                    runProps.FontVariationNamedInstance,
+                    runProps.FontOpticalSizing
+                );
+
+#pragma warning restore 6506
+                _latestPosition = _formatRuns.SetValue(formatRider.CurrentPosition, i - formatRider.CurrentPosition,
+                    newProps, formatRider.SpanPosition);
+            }
+        }
+
         /// <summary>
         /// Sets or changes the font family for the text object 
         /// </summary>
@@ -334,7 +418,10 @@ namespace Avalonia.Media
                     runProps.BackgroundBrush,
                     runProps.BaselineAlignment,
                     runProps.CultureInfo,
-                    runProps.FontFeatures);
+                    runProps.FontFeatures,
+                    runProps.FontVariations,
+                    runProps.FontVariationNamedInstance,
+                    runProps.FontOpticalSizing);
 
 #pragma warning restore 6506
                 _latestPosition = _formatRuns.SetValue(formatRider.CurrentPosition, i - formatRider.CurrentPosition,
@@ -393,7 +480,10 @@ namespace Avalonia.Media
                     runProps.BackgroundBrush,
                     runProps.BaselineAlignment,
                     runProps.CultureInfo,
-                    runProps.FontFeatures
+                    runProps.FontFeatures,
+                    runProps.FontVariations,
+                    runProps.FontVariationNamedInstance,
+                    runProps.FontOpticalSizing
                 );
 
                 _latestPosition = _formatRuns.SetValue(formatRider.CurrentPosition, i - formatRider.CurrentPosition,
@@ -456,7 +546,10 @@ namespace Avalonia.Media
                     runProps.BackgroundBrush,
                     runProps.BaselineAlignment,
                     culture,
-                    runProps.FontFeatures
+                    runProps.FontFeatures,
+                    runProps.FontVariations,
+                    runProps.FontVariationNamedInstance,
+                    runProps.FontOpticalSizing
                 );
 
 #pragma warning restore 6506
@@ -516,7 +609,10 @@ namespace Avalonia.Media
                     runProps.BackgroundBrush,
                     runProps.BaselineAlignment,
                     runProps.CultureInfo,
-                    runProps.FontFeatures
+                    runProps.FontFeatures,
+                    runProps.FontVariations,
+                    runProps.FontVariationNamedInstance,
+                    runProps.FontOpticalSizing
                     );
 #pragma warning restore 6506 
                 _latestPosition = _formatRuns.SetValue(formatRider.CurrentPosition, i - formatRider.CurrentPosition, newProps, formatRider.SpanPosition);
@@ -573,7 +669,10 @@ namespace Avalonia.Media
                     runProps.BackgroundBrush,
                     runProps.BaselineAlignment,
                     runProps.CultureInfo,
-                    runProps.FontFeatures
+                    runProps.FontFeatures,
+                    runProps.FontVariations,
+                    runProps.FontVariationNamedInstance,
+                    runProps.FontOpticalSizing
                     );
 #pragma warning restore 6506
 
@@ -630,7 +729,10 @@ namespace Avalonia.Media
                     runProps.BackgroundBrush,
                     runProps.BaselineAlignment,
                     runProps.CultureInfo,
-                    runProps.FontFeatures
+                    runProps.FontFeatures,
+                    runProps.FontVariations,
+                    runProps.FontVariationNamedInstance,
+                    runProps.FontOpticalSizing
                     );
 #pragma warning restore 6506
 
@@ -688,7 +790,10 @@ namespace Avalonia.Media
                     runProps.BackgroundBrush,
                     runProps.BaselineAlignment,
                     runProps.CultureInfo,
-                    runProps.FontFeatures
+                    runProps.FontFeatures,
+                    runProps.FontVariations,
+                    runProps.FontVariationNamedInstance,
+                    runProps.FontOpticalSizing
                     );
 #pragma warning restore 6506
 
