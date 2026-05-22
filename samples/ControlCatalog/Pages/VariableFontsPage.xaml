@@ -1,0 +1,133 @@
+<ContentPage Theme="{StaticResource ScrollPage}"
+             xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Header="Variable Fonts"
+             x:Class="ControlCatalog.Pages.VariableFontsPage">
+  <ScrollViewer>
+    <StackPanel Spacing="16" Margin="16">
+      <TextBlock Classes="h2">A demonstration of variable font axes using Roboto Flex</TextBlock>
+
+      <!-- Live Preview -->
+      <Border BorderBrush="{DynamicResource CatalogBaseMediumColor}"
+              BorderThickness="1"
+              Padding="16">
+        <TextBlock x:Name="PreviewTextBlock"
+                   FontFamily="avares://ControlCatalog/Assets/Fonts#Roboto Flex"
+                   FontSize="48"
+                   TextWrapping="Wrap"
+                   Text="The quick brown fox jumps over the lazy dog."
+                   HorizontalAlignment="Center" />
+      </Border>
+
+      <!-- FontVariations CSS string -->
+      <StackPanel Spacing="4">
+        <TextBlock FontWeight="Bold" Text="FontVariations" />
+        <TextBlock x:Name="VariationsStringTextBlock"
+                   FontFamily="Courier New"
+                   Text="&quot;wght&quot; 400"
+                   TextWrapping="Wrap" />
+      </StackPanel>
+
+      <!-- Optical Sizing -->
+      <StackPanel Spacing="4">
+        <TextBlock FontWeight="Bold" Text="FontOpticalSizing" />
+        <StackPanel Orientation="Horizontal" Spacing="16">
+          <RadioButton x:Name="OpticalSizingAuto"
+                       Content="Auto"
+                       IsChecked="True"
+                       IsCheckedChanged="OnOpticalSizingChanged" />
+          <RadioButton x:Name="OpticalSizingNone"
+                       Content="None"
+                       IsCheckedChanged="OnOpticalSizingChanged" />
+        </StackPanel>
+      </StackPanel>
+
+      <!-- Axis Sliders -->
+      <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" x:Name="SlidersGrid">
+        <TextBlock Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="3" FontWeight="Bold" Text="Axis Controls" Margin="0,0,0,8" />
+
+        <!-- wght -->
+        <TextBlock Grid.Column="0" Grid.Row="1" Text="wght" VerticalAlignment="Center" Margin="0,0,8,0" />
+        <Slider x:Name="WghtSlider" Grid.Column="1" Grid.Row="1" Minimum="100" Maximum="1000" Value="400" TickFrequency="10" />
+        <TextBlock x:Name="WghtValue" Grid.Column="2" Grid.Row="1" Text="400" Width="50" TextAlignment="Right" VerticalAlignment="Center" Margin="8,0,0,0" />
+
+        <!-- wdth -->
+        <TextBlock Grid.Column="0" Grid.Row="2" Text="wdth" VerticalAlignment="Center" Margin="0,0,8,0" />
+        <Slider x:Name="WdthSlider" Grid.Column="1" Grid.Row="2" Minimum="25" Maximum="151" Value="100" TickFrequency="1" />
+        <TextBlock x:Name="WdthValue" Grid.Column="2" Grid.Row="2" Text="100" Width="50" TextAlignment="Right" VerticalAlignment="Center" Margin="8,0,0,0" />
+
+        <!-- slnt -->
+        <TextBlock Grid.Column="0" Grid.Row="3" Text="slnt" VerticalAlignment="Center" Margin="0,0,8,0" />
+        <Slider x:Name="SlntSlider" Grid.Column="1" Grid.Row="3" Minimum="-10" Maximum="0" Value="0" TickFrequency="0.5" />
+        <TextBlock x:Name="SlntValue" Grid.Column="2" Grid.Row="3" Text="0" Width="50" TextAlignment="Right" VerticalAlignment="Center" Margin="8,0,0,0" />
+
+        <!-- opsz -->
+        <TextBlock Grid.Column="0" Grid.Row="4" Text="opsz" VerticalAlignment="Center" Margin="0,0,8,0" />
+        <Slider x:Name="OpszSlider" Grid.Column="1" Grid.Row="4" Minimum="8" Maximum="144" Value="48" TickFrequency="1" />
+        <TextBlock x:Name="OpszValue" Grid.Column="2" Grid.Row="4" Text="48" Width="50" TextAlignment="Right" VerticalAlignment="Center" Margin="8,0,0,0" />
+
+        <!-- GRAD -->
+        <TextBlock Grid.Column="0" Grid.Row="5" Text="GRAD" VerticalAlignment="Center" Margin="0,0,8,0" />
+        <Slider x:Name="GradSlider" Grid.Column="1" Grid.Row="5" Minimum="-200" Maximum="150" Value="0" TickFrequency="1" />
+        <TextBlock x:Name="GradValue" Grid.Column="2" Grid.Row="5" Text="0" Width="50" TextAlignment="Right" VerticalAlignment="Center" Margin="8,0,0,0" />
+
+        <!-- XTRA -->
+        <TextBlock Grid.Column="0" Grid.Row="6" Text="XTRA" VerticalAlignment="Center" Margin="0,0,8,0" />
+        <Slider x:Name="XtraSlider" Grid.Column="1" Grid.Row="6" Minimum="323" Maximum="603" Value="468" TickFrequency="1" />
+        <TextBlock x:Name="XtraValue" Grid.Column="2" Grid.Row="6" Text="468" Width="50" TextAlignment="Right" VerticalAlignment="Center" Margin="8,0,0,0" />
+
+        <!-- XOPQ -->
+        <TextBlock Grid.Column="0" Grid.Row="7" Text="XOPQ" VerticalAlignment="Center" Margin="0,0,8,0" />
+        <Slider x:Name="XopqSlider" Grid.Column="1" Grid.Row="7" Minimum="27" Maximum="175" Value="96" TickFrequency="1" />
+        <TextBlock x:Name="XopqValue" Grid.Column="2" Grid.Row="7" Text="96" Width="50" TextAlignment="Right" VerticalAlignment="Center" Margin="8,0,0,0" />
+
+        <!-- YOPQ -->
+        <TextBlock Grid.Column="0" Grid.Row="8" Text="YOPQ" VerticalAlignment="Center" Margin="0,0,8,0" />
+        <Slider x:Name="YopqSlider" Grid.Column="1" Grid.Row="8" Minimum="25" Maximum="135" Value="79" TickFrequency="1" />
+        <TextBlock x:Name="YopqValue" Grid.Column="2" Grid.Row="8" Text="79" Width="50" TextAlignment="Right" VerticalAlignment="Center" Margin="8,0,0,0" />
+
+        <!-- YTAS -->
+        <TextBlock Grid.Column="0" Grid.Row="9" Text="YTAS" VerticalAlignment="Center" Margin="0,0,8,0" />
+        <Slider x:Name="YtasSlider" Grid.Column="1" Grid.Row="9" Minimum="649" Maximum="854" Value="750" TickFrequency="1" />
+        <TextBlock x:Name="YtasValue" Grid.Column="2" Grid.Row="9" Text="750" Width="50" TextAlignment="Right" VerticalAlignment="Center" Margin="8,0,0,0" />
+
+        <!-- YTDE -->
+        <TextBlock Grid.Column="0" Grid.Row="10" Text="YTDE" VerticalAlignment="Center" Margin="0,0,8,0" />
+        <Slider x:Name="YtdeSlider" Grid.Column="1" Grid.Row="10" Minimum="-305" Maximum="-98" Value="-203" TickFrequency="1" />
+        <TextBlock x:Name="YtdeValue" Grid.Column="2" Grid.Row="10" Text="-203" Width="50" TextAlignment="Right" VerticalAlignment="Center" Margin="8,0,0,0" />
+
+        <!-- YTFI -->
+        <TextBlock Grid.Column="0" Grid.Row="11" Text="YTFI" VerticalAlignment="Center" Margin="0,0,8,0" />
+        <Slider x:Name="YtfiSlider" Grid.Column="1" Grid.Row="11" Minimum="560" Maximum="788" Value="738" TickFrequency="1" />
+        <TextBlock x:Name="YtfiValue" Grid.Column="2" Grid.Row="11" Text="738" Width="50" TextAlignment="Right" VerticalAlignment="Center" Margin="8,0,0,0" />
+
+        <!-- YTLC -->
+        <TextBlock Grid.Column="0" Grid.Row="12" Text="YTLC" VerticalAlignment="Center" Margin="0,0,8,0" />
+        <Slider x:Name="YtlcSlider" Grid.Column="1" Grid.Row="12" Minimum="416" Maximum="570" Value="514" TickFrequency="1" />
+        <TextBlock x:Name="YtlcValue" Grid.Column="2" Grid.Row="12" Text="514" Width="50" TextAlignment="Right" VerticalAlignment="Center" Margin="8,0,0,0" />
+
+        <!-- YTUC -->
+        <TextBlock Grid.Column="0" Grid.Row="13" Text="YTUC" VerticalAlignment="Center" Margin="0,0,8,0" />
+        <Slider x:Name="YtucSlider" Grid.Column="1" Grid.Row="13" Minimum="528" Maximum="760" Value="712" TickFrequency="1" />
+        <TextBlock x:Name="YtucValue" Grid.Column="2" Grid.Row="13" Text="712" Width="50" TextAlignment="Right" VerticalAlignment="Center" Margin="8,0,0,0" />
+      </Grid>
+
+      <!-- Metadata -->
+      <StackPanel Spacing="8">
+        <TextBlock FontWeight="Bold" Text="Variation Axes" />
+        <TextBlock x:Name="AxesMetadataTextBlock"
+                   FontFamily="Courier New"
+                   TextWrapping="Wrap"
+                   Text="Loading..." />
+      </StackPanel>
+
+      <StackPanel Spacing="8">
+        <TextBlock FontWeight="Bold" Text="Named Instances" />
+        <TextBlock x:Name="NamedInstancesTextBlock"
+                   FontFamily="Courier New"
+                   TextWrapping="Wrap"
+                   Text="Loading..." />
+      </StackPanel>
+    </StackPanel>
+  </ScrollViewer>
+</ContentPage>

@@ -86,6 +86,7 @@ namespace ControlCatalog.ViewModels
             new PageItem("TabStrip",() => new TabStripPage(), Icons.Tab),
             new PageItem("TextBox",() => new TextBoxPage(), Icons.TextInput),
             new PageItem("TextBlock",() => new TextBlockPage(), Icons.TextInput),
+            new PageItem("Variable Fonts",() => new VariableFontsPage(), Icons.Tune),
             new PageItem("Theme Variants",() => new ThemePage(), Icons.Theme),
             new PageItem("ToggleSwitch",() => new ToggleSwitchPage(), Icons.Toggle),
             new PageItem("ToolTip",() => new ToolTipPage(), Icons.Tooltip),
