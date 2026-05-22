@@ -171,6 +171,26 @@ namespace Avalonia.Skia
             return false;
         }
 
+        public bool TryCreateGlyphTypeface(
+            Stream stream,
+            FontSimulations fontSimulations,
+            EffectiveVariationCoordinates variationCoordinates,
+            [NotNullWhen(true)] out IPlatformTypeface? platformTypeface)
+        {
+            var skTypeface = SKTypeface.FromStream(stream);
+
+            if (skTypeface != null)
+            {
+                platformTypeface = new SkiaTypeface(skTypeface, fontSimulations, variationCoordinates);
+
+                return true;
+            }
+
+            platformTypeface = null;
+
+            return false;
+        }
+
         public bool TryGetFamilyTypefaces(string familyName, [NotNullWhen(true)] out IReadOnlyList<Typeface>? familyTypefaces)
         {
             familyTypefaces = null;

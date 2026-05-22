@@ -206,7 +206,62 @@ namespace Avalonia.Media.Fonts
             var normalizedTypeface = typeface.Normalize(out var familyName);
             var key = normalizedTypeface.ToFontCollectionKey(variationCoordinates);
 
+            if (key.HasVariationCoordinates)
+            {
+                if (TryGetTransientGlyphTypeface(familyName, key, out glyphTypeface))
+                {
+                    return glyphTypeface is not null;
+                }
+
+                if (!TryGetGlyphTypeface(familyName, key.WithoutVariationCoordinates(), allowNearestMatch: true, out var baseGlyphTypeface))
+                {
+                    return false;
+                }
+
+                if (TryCreateVariationGlyphTypeface(baseGlyphTypeface, key.VariationCoordinates!, out glyphTypeface))
+                {
+                    TryAddGlyphTypeface(familyName, key, glyphTypeface);
+                    TryAddGlyphTypeface(glyphTypeface, key);
+
+                    return true;
+                }
+
+                TryAddGlyphTypeface(familyName, key, null);
+
+                return false;
+            }
+
             return TryGetGlyphTypeface(familyName, key, allowNearestMatch: true, out glyphTypeface);
+        }
+
+        private bool TryCreateVariationGlyphTypeface(
+            GlyphTypeface baseGlyphTypeface,
+            EffectiveVariationCoordinates variationCoordinates,
+            [NotNullWhen(true)] out GlyphTypeface? glyphTypeface)
+        {
+            glyphTypeface = null;
+
+            if (_fontManagerImpl is not IFontManagerImplWithVariations variationPlatformImpl ||
+                !baseGlyphTypeface.PlatformTypeface.TryGetStream(out var stream))
+            {
+                return false;
+            }
+
+            using (stream)
+            {
+                if (!variationPlatformImpl.TryCreateGlyphTypeface(
+                        stream,
+                        baseGlyphTypeface.FontSimulations,
+                        variationCoordinates,
+                        out var platformTypeface))
+                {
+                    return false;
+                }
+
+                glyphTypeface = GlyphTypeface.TryCreate(platformTypeface, baseGlyphTypeface.FontSimulations);
+
+                return glyphTypeface is not null;
+            }
         }
 
         public virtual bool TryGetFamilyTypefaces(string familyName, [NotNullWhen(true)] out IReadOnlyList<Typeface>? familyTypefaces)
@@ -792,7 +847,7 @@ namespace Avalonia.Media.Fonts
             return dict.TryAdd(key, glyphTypeface);
         }
 
-        private bool TryGetTransientGlyphTypeface(
+        protected bool TryGetTransientGlyphTypeface(
             string familyName,
             FontCollectionKey key,
             out GlyphTypeface? glyphTypeface)

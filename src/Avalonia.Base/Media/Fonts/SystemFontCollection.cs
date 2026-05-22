@@ -106,8 +106,12 @@ namespace Avalonia.Media.Fonts
             var normalizedTypeface = typeface.Normalize(out var familyName);
             var key = normalizedTypeface.ToFontCollectionKey(variationCoordinates);
 
-            // Find an exact match first
-            if (TryGetGlyphTypeface(familyName, key, allowNearestMatch: false, out glyphTypeface))
+            // Find an exact match first. Variation requests must only hit the transient
+            // variation cache here; the stable cache lookup deliberately ignores
+            // variation coordinates to find the base face.
+            if (key.HasVariationCoordinates
+                    ? TryGetTransientGlyphTypeface(familyName, key, out glyphTypeface) && glyphTypeface is not null
+                    : TryGetGlyphTypeface(familyName, key, allowNearestMatch: false, out glyphTypeface))
             {
                 return true;
             }
