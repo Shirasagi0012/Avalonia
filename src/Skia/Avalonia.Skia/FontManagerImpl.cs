@@ -13,6 +13,12 @@ namespace Avalonia.Skia
 {
     internal class FontManagerImpl : IFontManagerImpl
     {
+        static FontManagerImpl()
+        {
+            // Avoid SkiaSharp v4's SKFontManager/SKTypeface static initialization cycle.
+            _ = SKTypeface.Default;
+        }
+
         private SKFontManager _skFontManager = SKFontManager.Default;
 
         public string GetDefaultFontFamilyName()

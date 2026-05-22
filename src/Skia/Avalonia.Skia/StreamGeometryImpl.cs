@@ -10,7 +10,7 @@ namespace Avalonia.Skia
     internal class StreamGeometryImpl : GeometryImpl, IStreamGeometryImpl
     {
         private Rect _bounds;
-        private readonly SKPath _strokePath;
+        private SKPath _strokePath;
         private SKPath? _fillPath;
 
         /// <summary>
@@ -79,17 +79,28 @@ namespace Avalonia.Skia
         private class StreamContext : IStreamGeometryContextImpl
         {
             private readonly StreamGeometryImpl _geometryImpl;
-            private SKPath Stroke => _geometryImpl._strokePath;
-            private SKPath Fill => _geometryImpl._fillPath ??= new();
+            private readonly SKPathBuilder _strokeBuilder;
+            private SKPathBuilder? _fillBuilder;
+            private bool _fillMatchesStroke;
+            private SKPathBuilder Stroke => _strokeBuilder;
+            private SKPathBuilder Fill => _fillMatchesStroke ? Stroke : _fillBuilder ??= new SKPathBuilder();
             private bool _isFilled;
             private Point _startPoint;
             private bool _isFigureBroken;
-            private bool Duplicate => _isFilled && !ReferenceEquals(_geometryImpl._fillPath, Stroke);
+            private bool Duplicate => _isFilled && !_fillMatchesStroke;
 
             private void EnsureSeparateFillPath()
             {
-                if (Stroke == Fill)
-                    _geometryImpl._fillPath = Stroke.Clone();
+                if (_fillMatchesStroke)
+                {
+                    using var snapshot = Stroke.Snapshot();
+                    _fillBuilder = new SKPathBuilder(snapshot);
+                    _fillMatchesStroke = false;
+                }
+                else
+                {
+                    _fillBuilder ??= new SKPathBuilder();
+                }
             }
             
             private void BreakFigure()
@@ -109,14 +120,41 @@ namespace Avalonia.Skia
             public StreamContext(StreamGeometryImpl geometryImpl)
             {
                 _geometryImpl = geometryImpl;
+                _strokeBuilder = new SKPathBuilder(geometryImpl._strokePath);
+                if (geometryImpl._fillPath is null)
+                {
+                    _fillMatchesStroke = false;
+                }
+                else if (ReferenceEquals(geometryImpl._fillPath, geometryImpl._strokePath))
+                {
+                    _fillMatchesStroke = true;
+                }
+                else
+                {
+                    _fillBuilder = new SKPathBuilder(geometryImpl._fillPath);
+                }
             }
 
             /// <inheritdoc />
             /// <remarks>Will update bounds of passed geometry.</remarks>
             public void Dispose()
             {
-                _geometryImpl._bounds = Stroke.TightBounds.ToAvaloniaRect();
+                var oldStroke = _geometryImpl._strokePath;
+                var oldFill = _geometryImpl._fillPath;
+                var stroke = Stroke.Detach();
+                var fill = _fillMatchesStroke ? stroke : _fillBuilder?.Detach();
+
+                _geometryImpl._strokePath = stroke;
+                _geometryImpl._fillPath = fill;
+                _geometryImpl._bounds = stroke.TightBounds.ToAvaloniaRect();
                 _geometryImpl.InvalidateCaches();
+
+                oldStroke.Dispose();
+                if (oldFill is not null && !ReferenceEquals(oldFill, oldStroke))
+                    oldFill.Dispose();
+
+                _strokeBuilder.Dispose();
+                _fillBuilder?.Dispose();
             }
 
             /// <inheritdoc />

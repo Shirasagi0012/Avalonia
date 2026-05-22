@@ -147,13 +147,13 @@ namespace Avalonia.Skia
 
             segmentGeometry = null;
 
-            var _skPathSegment = new SKPath();
+            using var builder = new SKPathBuilder();
 
-            var res = CachedPathMeasure.GetSegment((float)startDistance, (float)stopDistance, _skPathSegment, startOnBeginFigure);
+            var res = CachedPathMeasure.GetSegment((float)startDistance, (float)stopDistance, builder, startOnBeginFigure);
 
             if (res)
             {
-                segmentGeometry = new StreamGeometryImpl(_skPathSegment, null);
+                segmentGeometry = new StreamGeometryImpl(builder.Detach(), null);
             }
 
             return res;

@@ -15,7 +15,7 @@ namespace Avalonia.Skia
             var fillType = fillRule == FillRule.NonZero ? SKPathFillType.Winding : SKPathFillType.EvenOdd;
             var count = children.Count;
             
-            var stroke = new SKPath
+            using var strokeBuilder = new SKPathBuilder
             {
                 FillType = fillType
             };
@@ -26,17 +26,19 @@ namespace Avalonia.Skia
                 if (children[i] is GeometryImpl geo)
                 {
                     if (geo.StrokePath != null)
-                        stroke.AddPath(geo.StrokePath);
+                        strokeBuilder.AddPath(geo.StrokePath);
                     if (!ReferenceEquals(geo.StrokePath, geo.FillPath))
                         requiresFillPass = true;
                 }
             }
+
+            var stroke = strokeBuilder.Detach();
             
             StrokePath = stroke;
             
             if (requiresFillPass)
             {
-                var fill = new SKPath
+                using var fillBuilder = new SKPathBuilder
                 {
                     FillType = fillType
                 };
@@ -44,10 +46,10 @@ namespace Avalonia.Skia
                 for (var i = 0; i < count; ++i)
                 {
                     if (children[i] is GeometryImpl { FillPath: { } fillPath })
-                        fill.AddPath(fillPath);
+                        fillBuilder.AddPath(fillPath);
                 }
 
-                FillPath = fill;
+                FillPath = fillBuilder.Detach();
             }
             else
                 FillPath = stroke;
