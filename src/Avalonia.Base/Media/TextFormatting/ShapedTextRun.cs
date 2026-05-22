@@ -28,7 +28,7 @@ namespace Avalonia.Media.TextFormatting
         {
             ShapedBuffer = shapedBuffer;
             Properties = properties;
-            TextMetrics = new TextMetrics(properties.CachedGlyphTypeface, properties.FontRenderingEmSize);
+            TextMetrics = new TextMetrics(shapedBuffer.GlyphTypeface, properties.FontRenderingEmSize);
         }
 
         public sbyte BidiLevel => ShapedBuffer.BidiLevel;

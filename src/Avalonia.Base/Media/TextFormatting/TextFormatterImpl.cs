@@ -365,6 +365,7 @@ namespace Avalonia.Media.TextFormatting
 
                                 var text = shapeableRun.Text;
                                 var properties = shapeableRun.Properties;
+                                var glyphTypeface = properties.GetGlyphTypeface(fontManager);
 
                                 while (index + 1 < processedRuns.Count)
                                 {
@@ -389,7 +390,7 @@ namespace Avalonia.Media.TextFormatting
 
                                 var shaperOptions = new TextShaperOptions(
                                     properties.Typeface,
-                                    properties.CachedGlyphTypeface,
+                                    glyphTypeface,
                                     properties.FontRenderingEmSize,
                                     shapeableRun.BidiLevel,
                                     properties.CultureInfo,
@@ -838,7 +839,7 @@ namespace Avalonia.Media.TextFormatting
         {
             var flowDirection = paragraphProperties.FlowDirection;
             var properties = paragraphProperties.DefaultTextRunProperties;
-            var glyphTypeface = properties.CachedGlyphTypeface;
+            var glyphTypeface = properties.GetGlyphTypeface(FontManager.Current);
             var glyph = glyphTypeface.CharacterToGlyphMap[s_empty[0]];
             var glyphInfos = new[] { new GlyphInfo(glyph, firstTextSourceIndex, 0.0) };
 

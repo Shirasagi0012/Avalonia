@@ -82,9 +82,9 @@ namespace Avalonia.Media.TextFormatting
             ref TextRunProperties? previousProperties)
         {
             var defaultTypeface = defaultProperties.Typeface;
-            var defaultGlyphTypeface = defaultProperties.CachedGlyphTypeface;
+            var defaultGlyphTypeface = defaultProperties.GetGlyphTypeface(fontManager);
             var previousTypeface = previousProperties?.Typeface;
-            var previousGlyphTypeface = previousProperties?.CachedGlyphTypeface;
+            var previousGlyphTypeface = previousProperties?.GetGlyphTypeface(fontManager);
             var textSpan = text.Span;
 
             var count = 0;

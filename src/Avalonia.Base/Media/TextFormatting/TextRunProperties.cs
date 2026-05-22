@@ -72,6 +72,17 @@ namespace Avalonia.Media.TextFormatting
         internal GlyphTypeface CachedGlyphTypeface
             => _cachedGlyphTypeFace ??= Typeface.GlyphTypeface;
 
+        internal GlyphTypeface GetGlyphTypeface(FontManager fontManager)
+        {
+            return fontManager.TryGetGlyphTypeface(
+                Typeface,
+                FontRenderingEmSize,
+                FontOpticalSizing,
+                out var glyphTypeface)
+                ? glyphTypeface
+                : CachedGlyphTypeface;
+        }
+
         public bool Equals(TextRunProperties? other)
         {
             if (ReferenceEquals(null, other))

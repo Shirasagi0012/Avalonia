@@ -74,20 +74,22 @@
         {
             var textShaper = TextShaper.Current;
 
-            var glyphTypeface = textRun.Properties!.CachedGlyphTypeface;
+            var properties = textRun.Properties!;
 
-            var fontRenderingEmSize = textRun.Properties.FontRenderingEmSize;
+            var glyphTypeface = properties.GetGlyphTypeface(FontManager.Current);
 
-            var cultureInfo = textRun.Properties.CultureInfo;
+            var fontRenderingEmSize = properties.FontRenderingEmSize;
 
-            var shaperOptions = new TextShaperOptions(textRun.Properties.Typeface, glyphTypeface, fontRenderingEmSize,
-                (sbyte)flowDirection, cultureInfo, 0, 0, textRun.Properties.FontFeatures,
-                textRun.Properties.FontVariations, textRun.Properties.FontVariationNamedInstance,
-                textRun.Properties.FontOpticalSizing);
+            var cultureInfo = properties.CultureInfo;
+
+            var shaperOptions = new TextShaperOptions(properties.Typeface, glyphTypeface, fontRenderingEmSize,
+                (sbyte)flowDirection, cultureInfo, 0, 0, properties.FontFeatures,
+                properties.FontVariations, properties.FontVariationNamedInstance,
+                properties.FontOpticalSizing);
 
             var shapedBuffer = textShaper.ShapeText(textRun.Text, shaperOptions);
 
-            return new ShapedTextRun(shapedBuffer, textRun.Properties);
+            return new ShapedTextRun(shapedBuffer, properties);
         }
     }
 }
