@@ -83,6 +83,12 @@ namespace Avalonia
             AvaloniaProperty.Register<Visual, IEffect?>(nameof(Effect));
 
         /// <summary>
+        /// Defines the <see cref="BackdropEffect"/> property.
+        /// </summary>
+        public static readonly StyledProperty<IEffect?> BackdropEffectProperty =
+            AvaloniaProperty.Register<Visual, IEffect?>(nameof(BackdropEffect));
+
+        /// <summary>
         /// Defines the <see cref="HasMirrorTransform"/> property.
         /// </summary>
         public static readonly DirectProperty<Visual, bool> HasMirrorTransformProperty =
@@ -146,6 +152,7 @@ namespace Avalonia
                 OpacityProperty,
                 OpacityMaskProperty,
                 EffectProperty,
+                BackdropEffectProperty,
                 HasMirrorTransformProperty);
             RenderTransformProperty.Changed.Subscribe(RenderTransformChanged);
             ZIndexProperty.Changed.Subscribe(ZIndexChanged);
@@ -284,6 +291,17 @@ namespace Avalonia
         {
             get => GetValue(EffectProperty);
             set => SetValue(EffectProperty, value);
+        }
+
+        /// <summary>
+        /// Gets or sets the backdrop effect applied to the area behind this visual.
+        /// Unlike <see cref="Effect"/>, this filters content already drawn behind the visual
+        /// rather than the visual's own rendered content.
+        /// </summary>
+        public IEffect? BackdropEffect
+        {
+            get => GetValue(BackdropEffectProperty);
+            set => SetValue(BackdropEffectProperty, value);
         }
 
 

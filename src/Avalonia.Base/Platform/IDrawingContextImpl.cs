@@ -219,6 +219,13 @@ namespace Avalonia.Platform
         void PopEffect();
     }
 
+    [PrivateApi]
+    public interface IDrawingContextImplWithBackdropEffects : IDrawingContextImplWithEffects
+    {
+        void PushBackdropEffect(Rect? bounds, IEffect effect);
+        void PopBackdropEffect();
+    }
+
     public static class DrawingContextImplExtensions
     {
         /// <summary>

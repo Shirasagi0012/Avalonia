@@ -159,6 +159,9 @@ partial class ServerCompositionVisual
             if (visual.OpacityMaskBrush != null)
                 _canvas.PushOpacityMask(visual.OpacityMaskBrush, visual._subTreeBounds!.Value.ToRect());
             
+            if (visual.BackdropEffect != null && _canvas is IDrawingContextImplWithBackdropEffects backdropEffects)
+                backdropEffects.PushBackdropEffect(visual._subTreeBounds!.Value.ToRect(), visual.BackdropEffect);
+
             if (visual.Effect != null && _canvas is IDrawingContextImplWithEffects effects)
                 effects.PushEffect(visual._subTreeBounds!.Value.ToRect(), visual.Effect);
 
@@ -182,6 +185,9 @@ partial class ServerCompositionVisual
             {
                 if (visual.Effect != null && _canvas is IDrawingContextImplWithEffects effects)
                     effects.PopEffect();
+
+                if (visual.BackdropEffect != null && _canvas is IDrawingContextImplWithBackdropEffects backdropEffects)
+                    backdropEffects.PopBackdropEffect();
 
                 if (visual.OpacityMaskBrush != null)
                     _canvas.PopOpacityMask();

@@ -23,7 +23,8 @@ internal partial class CompositorDrawingContextProxy
         PushGeometryClip,
         PushRenderOptions,
         PushTextOptions,
-        PushEffect
+        PushEffect,
+        PushBackdropEffect
     }
 
     [StructLayout(LayoutKind.Explicit)]
@@ -147,6 +148,11 @@ internal partial class CompositorDrawingContextProxy
         {
             if (_impl is IDrawingContextImplWithEffects effects)
                 effects.PushEffect(cmd.DataUnion.EffectClipRect, cmd.ObjectUnion.Effect!);
+        }
+        else if (cmd.Type == PendingCommandType.PushBackdropEffect)
+        {
+            if (_impl is IDrawingContextImplWithBackdropEffects be)
+                be.PushBackdropEffect(cmd.DataUnion.EffectClipRect, cmd.ObjectUnion.Effect!);
         }
         else if (cmd.Type == PendingCommandType.PushRenderOptions)
             _impl.PushRenderOptions(cmd.DataUnion.RenderOptions);

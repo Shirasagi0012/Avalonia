@@ -1,0 +1,105 @@
+<ContentPage Theme="{StaticResource ScrollPage}" x:Class="ControlCatalog.Pages.BackdropEffectPage"
+             xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             d:DesignHeight="800"
+             Header="Backdrop Effect"
+             d:DesignWidth="600"
+             mc:Ignorable="d">
+  <ContentPage.Styles>
+    <Style Selector="TextBlock">
+      <Setter Property="Foreground" Value="White" />
+    </Style>
+    <Style Selector="Slider">
+      <Setter Property="Margin" Value="8,0" />
+      <Setter Property="Minimum" Value="0" />
+      <Setter Property="Maximum" Value="30" />
+      <Setter Property="LargeChange" Value="5" />
+      <Setter Property="SmallChange" Value="1" />
+    </Style>
+  </ContentPage.Styles>
+
+  <StackPanel Spacing="20">
+
+    <!-- Description -->
+    <TextBlock Text="BackdropEffect applies a visual filter to the area BEHIND the element. Use it to create acrylic/frosted glass effects."
+               Theme="{StaticResource BodyTextBlock}"
+               TextWrapping="Wrap"
+               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+
+    <!-- Blur Radius Control -->
+    <Border Padding="16" CornerRadius="8"
+            Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}">
+      <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto">
+        <TextBlock Grid.Column="0" Text="Blur Radius:" VerticalAlignment="Center"
+                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" />
+        <Slider Name="BlurRadiusSlider" Grid.Column="1" Value="10" Maximum="128" Minimum="0" />
+        <TextBlock Grid.Column="2" VerticalAlignment="Center"
+                   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                   Text="{Binding #BlurRadiusSlider.Value, StringFormat=\{0:0\}px}" />
+      </Grid>
+    </Border>
+
+    <!-- Demo 1: Frosted glass card over colorful shapes -->
+    <Border Height="300" CornerRadius="12" ClipToBounds="True">
+      <Grid>
+        <Canvas>
+          <Ellipse Width="200" Height="200" Canvas.Left="-50" Canvas.Top="-30"
+                   Fill="#FF6B35" Opacity="0.8" />
+          <Ellipse Width="180" Height="180" Canvas.Left="300" Canvas.Top="40"
+                   Fill="#004E89" Opacity="0.7" />
+          <Ellipse Width="150" Height="150" Canvas.Left="120" Canvas.Top="120"
+                   Fill="#1A936F" Opacity="0.75" />
+          <Ellipse Width="120" Height="120" Canvas.Left="400" Canvas.Top="200"
+                   Fill="#F7B801" Opacity="0.8" />
+          <Ellipse Width="100" Height="100" Canvas.Left="250" Canvas.Top="10"
+                   Fill="#C73E1D" Opacity="0.6" />
+          <Ellipse Width="250" Height="250" Canvas.Left="350" Canvas.Top="-80"
+                   Fill="#6A4C93" Opacity="0.5" />
+          <Ellipse Width="160" Height="160" Canvas.Left="10" Canvas.Top="160"
+                   Fill="#1985A1" Opacity="0.7" />
+        </Canvas>
+
+        <Border Name="FrostedCard" MaxWidth="400" MaxHeight="200" CornerRadius="16"
+                ClipToBounds="True"
+                HorizontalAlignment="Center" VerticalAlignment="Center"
+                Background="#30444444" Padding="32,24">
+          <StackPanel Spacing="8" HorizontalAlignment="Center" VerticalAlignment="Center">
+            <TextBlock Text="Frosted Glass Panel" FontSize="20" FontWeight="Bold"
+                       HorizontalAlignment="Center" />
+            <TextBlock Text="This card uses BackdropEffect to blur the colorful shapes behind it, creating an acrylic-like frosted glass appearance."
+                       TextWrapping="Wrap" FontSize="13" Opacity="0.9"
+                       HorizontalAlignment="Center" MaxWidth="300" />
+            <TextBlock Name="BlurRadiusLabel" FontSize="11" Opacity="0.6"
+                       HorizontalAlignment="Center" Text="blur(10px)" />
+          </StackPanel>
+        </Border>
+      </Grid>
+    </Border>
+
+    <!-- Demo 2: Blur overlay bar over text -->
+    <Border Height="200" CornerRadius="12" ClipToBounds="True"
+            Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}">
+      <Grid>
+        <TextBlock FontSize="72" FontWeight="Black" Opacity="0.35" 
+                   Padding="0 20 0 0"
+                   Foreground="{DynamicResource SystemControlForegroundAccentBrush}"
+                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                   Text="BACKGROUND" />
+
+        <Border Name="BlurOverlayBar" HorizontalAlignment="Stretch" VerticalAlignment="Bottom"
+                Height="80" Padding="16,12" Background="#40FFFFFF">
+          <StackPanel Spacing="4" VerticalAlignment="Center">
+            <TextBlock Text="Blurred Overlay Bar" FontSize="16" FontWeight="SemiBold"
+                       Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" />
+            <TextBlock Text="The background text is blurred behind this semi-transparent bar."
+                       FontSize="12" Opacity="0.8"
+                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+          </StackPanel>
+        </Border>
+      </Grid>
+    </Border>
+
+  </StackPanel>
+</ContentPage>

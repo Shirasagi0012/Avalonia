@@ -7,7 +7,7 @@ namespace Avalonia.Rendering.Composition.Server;
 
 internal partial class ServerCompositionVisual
 {
-    protected virtual bool HasEffect => Effect != null;
+    protected virtual bool HasEffect => Effect != null || BackdropEffect != null;
     
     struct UpdateContext : IServerTreeVisitor, IDisposable
     {

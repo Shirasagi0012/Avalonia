@@ -14,7 +14,8 @@ using Avalonia.Utilities;
 namespace Avalonia.Rendering.Composition.Server;
 
 internal partial class CompositorDrawingContextProxy : IDrawingContextImpl,
-    IDrawingContextWithAcrylicLikeSupport, IDrawingContextImplWithEffects
+    IDrawingContextWithAcrylicLikeSupport, IDrawingContextImplWithEffects,
+    IDrawingContextImplWithBackdropEffects
 {
     private readonly IDrawingContextImpl _impl;
     private static readonly ThreadSafeObjectPool<Stack<Matrix>> s_transformStackPool = new();
@@ -328,6 +329,26 @@ internal partial class CompositorDrawingContextProxy : IDrawingContextImpl,
         {
             if (_impl is IDrawingContextImplWithEffects effects)
                 effects.PopEffect();
+            RestoreTransform();
+        }
+    }
+
+    public void PushBackdropEffect(Rect? bounds, IEffect effect)
+    {
+        AddCommand(new()
+        {
+            Type = PendingCommandType.PushBackdropEffect,
+            ObjectUnion = { Effect = effect },
+            DataUnion = { EffectClipRect = bounds }
+        });
+    }
+
+    public void PopBackdropEffect()
+    {
+        if (!TryDiscardOrFlush(PendingCommandType.PushBackdropEffect))
+        {
+            if (_impl is IDrawingContextImplWithBackdropEffects be)
+                be.PopBackdropEffect();
             RestoreTransform();
         }
     }

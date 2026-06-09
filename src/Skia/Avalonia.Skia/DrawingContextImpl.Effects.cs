@@ -26,6 +26,39 @@ partial class DrawingContextImpl
         RestoreCanvas();
     }
 
+    public void PushBackdropEffect(Rect? bounds, IEffect effect)
+    {
+        CheckLease();
+        using var filter = CreateEffect(effect);
+        if (filter is null)
+            return;
+
+        // Save current clip/transform state so we can restore it on pop.
+        Canvas.Save();
+
+        if (bounds.HasValue)
+        {
+            // Clip the canvas to the element's bounds so the backdrop
+            // capture only samples pixels within this region.
+            Canvas.ClipRect(bounds.Value.ToSKRect());
+        }
+
+        // Create the backdrop layer — the filtered backdrop fills the
+        // layer background, content drawn afterwards goes on top.
+        var rec = new SKCanvasSaveLayerRec
+        {
+            Backdrop = filter
+        };
+        Canvas.SaveLayer(rec);
+    }
+
+    public void PopBackdropEffect()
+    {
+        CheckLease();
+        RestoreCanvas();  // pop the SaveLayer
+        RestoreCanvas();  // pop the Save (clip)
+    }
+
     SKImageFilter? CreateEffect(IEffect effect)
     {
         if (effect is IBlurEffect blur)

@@ -29,6 +29,7 @@ namespace ControlCatalog.ViewModels
             new PageItem("Composition", () => new CompositionPage(), Icons.Layers),
             new PageItem("Accelerator", () => new AcceleratorPage(), Icons.Keyboard),
             new PageItem("Acrylic", () => new AcrylicPage(), Icons.Blur),
+            new PageItem("Backdrop Effect", () => new BackdropEffectPage(), Icons.Blur),
             new PageItem("AdornerLayer", () => new AdornerLayerPage(), Icons.Sparkle),
             new PageItem("AutoCompleteBox",() => new AutoCompleteBoxPage(), Icons.TextInput),
             new PageItem("Border",() => new BorderPage(), Icons.Border),
