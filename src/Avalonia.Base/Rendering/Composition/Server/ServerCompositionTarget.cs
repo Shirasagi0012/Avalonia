@@ -25,6 +25,11 @@ namespace Avalonia.Rendering.Composition.Server
         private readonly Func<IEnumerable<IPlatformRenderSurface>> _surfaces;
         private CompositionTargetOverlays _overlays;
         private static long s_nextId = 1;
+        // Diagnostic A/B only: the presentation demo uses an opaque, full-window
+        // redraw and FboSkiaSurface.Blit still clears/binds the destination.
+        private static readonly bool s_probeSkipTargetClear =
+            Environment.GetEnvironmentVariable("AVALONIA_PRESENTATION_SKIP_TARGET_CLEAR") == "1" &&
+            Environment.GetEnvironmentVariable("AVALONIA_WUC_PRESENTATION") == "1";
         private IRenderTarget? _renderTarget;
         private PixelSize _layerSize;
         private IDrawingContextLayerImpl? _layer;
@@ -259,7 +264,8 @@ namespace Avalonia.Rendering.Composition.Server
                         using (var context = _layer.CreateDrawingContext())
                             RenderRootToContextWithClip(context, Root);
 
-                        renderTargetContext.Clear(Colors.Transparent);
+                        if (!s_probeSkipTargetClear || !_layer.CanBlit)
+                            renderTargetContext.Clear(Colors.Transparent);
                         renderTargetContext.Transform = Matrix.Identity;
                         if (_layer.CanBlit)
                             _layer.Blit(renderTargetContext);

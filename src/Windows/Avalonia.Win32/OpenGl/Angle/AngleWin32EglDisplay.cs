@@ -31,8 +31,27 @@ namespace Avalonia.Win32.OpenGl.Angle
             GlVersions = AvaloniaLocator.Current.GetService<AngleOptions>()?.GlProfiles
                 .Where(x => x.Type == GlProfileType.OpenGLES),
             DeviceLostCheckCallback = deviceLostCheckCallback,
-            DisposeCallback = disposeCallback
+            DisposeCallback = disposeCallback,
+            // Diagnostic only: isolate per-frame pbuffer depth/stencil allocation.
+            ProbeConfig = Environment.GetEnvironmentVariable("AVALONIA_ANGLE_PROBE_NO_DEPTH_STENCIL") == "1"
+                ? ProbeWithoutDepthStencil : null
         };
+
+        private static IntPtr? ProbeWithoutDepthStencil(EglInterface egl, IntPtr display, IntPtr[] configs)
+        {
+            foreach (var config in configs)
+            {
+                if (egl.GetConfigAttrib(display, config, EGL_DEPTH_SIZE, out var depth)
+                    && egl.GetConfigAttrib(display, config, EGL_STENCIL_SIZE, out var stencil)
+                    && egl.GetConfigAttrib(display, config, EGL_SAMPLES, out var samples)
+                    && depth == 0 && stencil == 0 && samples == 0)
+                {
+                    WinRT.Composition.WinUiPresentationNative.Trace("NoDepthStencilConfig");
+                    return config;
+                }
+            }
+            return null;
+        }
         
         public static AngleWin32EglDisplay CreateD3D9Display(EglInterface egl)
         {
@@ -136,7 +155,8 @@ namespace Avalonia.Win32.OpenGl.Angle
             using (chosenAdapter)
                 DirectXUnmanagedMethods.D3D11CreateDevice(chosenAdapter?.GetNativeIntPtr() ?? IntPtr.Zero,
                     D3D_DRIVER_TYPE.D3D_DRIVER_TYPE_UNKNOWN,
-                    IntPtr.Zero, 0, featureLevels, (uint)featureLevels.Length,
+                    IntPtr.Zero, WinRT.Composition.WinUiPresentationNative.Enabled ? 0x28u : 0u,
+                    featureLevels, (uint)featureLevels.Length,
                     7, out pD3dDevice, out _, null);
 
 

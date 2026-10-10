@@ -142,6 +142,7 @@ namespace Avalonia.Skia
             if (_surface.CanBlit)
             {
                 _surface.Surface.Canvas.Flush();
+                PresentationGpuProbe.Mark(0);
                 _surface.Blit(context.Canvas);
             }
             else

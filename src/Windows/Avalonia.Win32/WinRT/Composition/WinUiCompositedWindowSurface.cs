@@ -141,6 +141,7 @@ namespace Avalonia.Win32.WinRT.Composition
         public unsafe IDirect3D11TextureRenderTargetRenderSession BeginDraw(
             IRenderTarget.RenderTargetSceneInfo sceneInfo)
         {
+            WinUiPresentationNative.Trace("BeginDraw");
             if (State.IsCorrupted)
                 throw new RenderTargetCorruptedException();
             var transaction = _window.BeginTransaction();
@@ -183,6 +184,7 @@ namespace Avalonia.Win32.WinRT.Composition
                     }
                     var iid = IID_ID3D11Texture2D;
                     off = _surfaceInterop.BeginDraw(null, &iid, &pTexture);
+                    WinUiPresentationNative.Trace("NativeBeginDrawEnd");
                 }
                 catch (Exception e)
                 {
@@ -235,6 +237,7 @@ namespace Avalonia.Win32.WinRT.Composition
                 {
                     _texture.Dispose();
                     _surfaceInterop.EndDraw();
+                    WinUiPresentationNative.Trace("EndDraw");
                     _surfaceInterop.Dispose();
                 }
                 finally

@@ -12,6 +12,12 @@ internal class WinUiCompositionShared : IDisposable
     public ICompositionBrush? MicaBrushLight { get; }
     public ICompositionBrush? MicaBrushDark { get; }
     public object SyncRoot { get; } = new();
+    // Experimental presentation path: content presents do not require tree commits.
+    public bool PresentationTreeDirty;
+    public Action? PresentationReady;
+    public long PresentationCount;
+    // Single-window diagnostic only: replace content generation after normal bootstrap.
+    public Action? PresentationDiagnosticDraw;
 
     public static readonly Version MinWinCompositionVersion = new(10, 0, 17134);
     public static readonly Version MinAcrylicVersion = new(10, 0, 15063);

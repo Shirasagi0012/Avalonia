@@ -137,12 +137,14 @@ namespace Avalonia.Skia
             // which is definitely not the best method, but it works
             canvas.Clear();
             canvas.Flush();
+            PresentationGpuProbe.Mark(1);
             
             var gl = _glContext.GlInterface;
             gl.GetIntegerv(GL_READ_FRAMEBUFFER_BINDING, out var oldRead);
             gl.BindFramebuffer(GL_READ_FRAMEBUFFER, _fbo);
             gl.BlitFramebuffer(0, 0, _pixelSize.Width, _pixelSize.Height, 0, 0, _pixelSize.Width, _pixelSize.Height,
                 GL_COLOR_BUFFER_BIT, GL_LINEAR);
+            PresentationGpuProbe.Mark(2);
             gl.BindFramebuffer(GL_READ_FRAMEBUFFER, oldRead);
         }
     }

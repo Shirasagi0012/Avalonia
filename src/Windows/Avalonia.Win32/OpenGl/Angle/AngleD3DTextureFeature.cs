@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using System.Diagnostics.Tracing;
 using Avalonia.OpenGL;
 using Avalonia.OpenGL.Egl;
 using Avalonia.OpenGL.Surfaces;
@@ -51,16 +52,22 @@ internal class AngleD3DTextureFeature  : IGlPlatformSurfaceRenderTargetFactory
                     throw;
                 }
 
+                AngleResourceProbe.Log.Phase(1);
                 surface = _angle.WrapDirect3D11Texture(session.D3D11Texture2D, session.Offset.X, session.Offset.Y,
                     session.Size.Width, session.Size.Height);
+                AngleResourceProbe.Log.Phase(2);
+                AngleResourceProbe.Log.Phase(3);
                 var rv = BeginDraw(surface, session.Size, session.Scaling, () =>
                 {
+                    AngleResourceProbe.Log.Phase(5);
                     using(contextLock)
                     using (session)
                     using (surface)
                     {
                     }
+                    AngleResourceProbe.Log.Phase(6);
                 }, true);
+                AngleResourceProbe.Log.Phase(4);
                 success = true;
                 return rv;
             }
@@ -103,5 +110,18 @@ internal class AngleD3DTextureFeature  : IGlPlatformSurfaceRenderTargetFactory
                 ctx.NotifyContextLost();
             throw;
         }
+    }
+}
+
+// Temporary ETW scope markers. No scheduling, flush, or resource-lifetime changes.
+[EventSource(Name = "Avalonia-WucResourceProbe", Guid = "b981e50b-a9c7-4f17-bc77-933441c2074a")]
+internal sealed class AngleResourceProbe : EventSource
+{
+    public static readonly AngleResourceProbe Log = new();
+    [Event(1, Level = EventLevel.Informational)]
+    public void Phase(int phase)
+    {
+        if (IsEnabled())
+            WriteEvent(1, phase);
     }
 }

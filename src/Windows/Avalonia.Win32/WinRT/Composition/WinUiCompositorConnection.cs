@@ -129,7 +129,15 @@ internal class WinUiCompositorConnection : IRenderTimer, Win32.IWindowsSurfaceFa
 
             _currentCommit?.Dispose();
             _currentCommit = null;
+            if (WinUiPresentationNative.Enabled)
+            {
+                WinUiPresentationNative.Trace("TreeCommitCompleted");
+                return;
+            }
+            WinUiPresentationNative.Trace("CommitCompleted");
+            WinUiPresentationNative.Trace("TickStart");
             _parent._tick?.Invoke(_st.Elapsed);
+            WinUiPresentationNative.Trace("TickEnd");
             // Always schedule a commit so the current frame's work reaches DWM.
             ScheduleNextCommit();
             _commitCompleted = true;
@@ -159,8 +167,10 @@ internal class WinUiCompositorConnection : IRenderTimer, Win32.IWindowsSurfaceFa
             Debug.Assert(Monitor.IsEntered(_parent._shared.SyncRoot), "Lock should be held");
 
             _commitDueAt = _st.Elapsed + TimeSpan.FromSeconds(1);
+            if (!WinUiPresentationNative.Enabled) WinUiPresentationNative.Trace("CommitRequestStart");
             _currentCommit = _parent._shared.Compositor5.RequestCommitAsync();
             _currentCommit.SetCompleted(this);
+            if (!WinUiPresentationNative.Enabled) WinUiPresentationNative.Trace("CommitRequestEnd");
         }
 
         public void WatchDog()
@@ -197,13 +207,37 @@ internal class WinUiCompositorConnection : IRenderTimer, Win32.IWindowsSurfaceFa
             lock (_parent._shared.SyncRoot)
                 ScheduleNextCommit();
         }
+
+        public void CommitTreeIfNeeded()
+        {
+            if (_currentCommit == null && _parent._shared.PresentationTreeDirty)
+            {
+                _parent._shared.PresentationTreeDirty = false;
+                WinUiPresentationNative.Trace("TreeCommitRequested");
+                ScheduleNextCommit();
+            }
+        }
     }
 
     private void RunLoop()
     {
+        if (WinUiPresentationNative.Enabled)
+        {
+            RunPresentationLoop();
+            return;
+        }
         var cts = new CancellationTokenSource();
         AppDomain.CurrentDomain.ProcessExit += (_, _) =>
             cts.Cancel();
+
+        // Diagnostic observer only: never dispatches a tick or changes commit scheduling.
+        if (Environment.GetEnvironmentVariable("AVALONIA_WUC_CLOCK_OBSERVER") == "1")
+            new Thread(() =>
+            {
+                while (!cts.IsCancellationRequested)
+                    if (WinUiPresentationNative.DCompositionWaitForCompositorClock(0, IntPtr.Zero, 100) == 0)
+                        WinUiPresentationNative.Trace("Clock");
+            }) { IsBackground = true, Name = "WucDiagnosticClockObserver" }.Start();
 
         var handler = new RunLoopHandler(this);
         handler.Start();
@@ -273,5 +307,76 @@ internal class WinUiCompositorConnection : IRenderTimer, Win32.IWindowsSurfaceFa
     }
 
     public bool RequiresNoRedirectionBitmap => true;
-    public IPlatformRenderSurface CreateSurface(EglGlPlatformSurface.IEglWindowGlPlatformSurfaceInfo info) => new WinUiCompositedWindowSurface(_shared, info);
+    public IPlatformRenderSurface CreateSurface(EglGlPlatformSurface.IEglWindowGlPlatformSurfaceInfo info) =>
+        WinUiPresentationNative.Enabled ? new WinUiPresentationSurface(_shared, info) : new WinUiCompositedWindowSurface(_shared, info);
+
+    private void RunPresentationLoop()
+    {
+        const uint clockMessage = 0x8000 + 73;
+        const uint readyMessage = clockMessage + 1;
+        var stopwatch = Stopwatch.StartNew();
+        var pendingClockMessage = 0;
+        var pendingReadyMessage = 0;
+        var opportunity = false;
+        long latestClockQpc = 0;
+        long opportunityQpc = 0;
+        using var phaseDelay = new WinUiPresentationPhaseDelay();
+        var handler = new RunLoopHandler(this);
+        using var cts = new CancellationTokenSource();
+        AppDomain.CurrentDomain.ProcessExit += (_, _) => cts.Cancel();
+        using var window = new SimpleWindow((hwnd, message, w, l) =>
+        {
+            if (message == clockMessage || message == readyMessage)
+            {
+                if (message == clockMessage)
+                {
+                    Interlocked.Exchange(ref pendingClockMessage, 0);
+                    opportunity = true;
+                    opportunityQpc = Interlocked.Read(ref latestClockQpc);
+                }
+                else Interlocked.Exchange(ref pendingReadyMessage, 0);
+                if (!opportunity) return IntPtr.Zero;
+                phaseDelay.Wait(opportunityQpc);
+                lock (_shared.SyncRoot)
+                {
+                    var count = _shared.PresentationCount;
+                    WinUiPresentationNative.Trace("TickStart");
+                    _tick?.Invoke(stopwatch.Elapsed);
+                    if (_shared.PresentationCount == count)
+                        _shared.PresentationDiagnosticDraw?.Invoke();
+                    handler.CommitTreeIfNeeded();
+                    WinUiPresentationNative.Trace("TickEnd");
+                    if (_shared.PresentationCount != count) opportunity = false;
+                }
+                return IntPtr.Zero;
+            }
+            return UnmanagedMethods.DefWindowProc(hwnd, message, w, l);
+        });
+        var handle = window.Handle;
+        _shared.PresentationReady = () =>
+        {
+            if (Interlocked.Exchange(ref pendingReadyMessage, 1) == 0)
+                UnmanagedMethods.PostMessage(handle, readyMessage, IntPtr.Zero, IntPtr.Zero);
+        };
+        var clock = new Thread(() =>
+        {
+            while (!cts.IsCancellationRequested)
+            {
+                if (_stopped) { _wakeEvent.WaitOne(100); continue; }
+                var result = WinUiPresentationNative.DCompositionWaitForCompositorClock(0, IntPtr.Zero, 100);
+                if (result != 0) { WinUiPresentationNative.Trace("ClockWaitResult", result); continue; }
+                var clockQpc = Stopwatch.GetTimestamp();
+                Interlocked.Exchange(ref latestClockQpc, clockQpc);
+                WinUiPresentationNative.Trace("Clock", (ulong)clockQpc);
+                // Coalesce opportunities. A late render must not produce a burst of catch-up frames.
+                if (Interlocked.Exchange(ref pendingClockMessage, 1) == 0)
+                    UnmanagedMethods.PostMessage(handle, clockMessage, IntPtr.Zero, IntPtr.Zero);
+            }
+        }) { IsBackground = true, Name = "WucPresentationClock" };
+        clock.Start();
+        while (!cts.IsCancellationRequested && UnmanagedMethods.GetMessage(out var msg, IntPtr.Zero, 0, 0) > 0)
+            UnmanagedMethods.DispatchMessage(ref msg);
+        cts.Cancel();
+        clock.Join(250);
+    }
 }
